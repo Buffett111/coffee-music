@@ -12,14 +12,18 @@
 		A10000000000000000000003 /* CoffeeSessionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* CoffeeSessionViewModel.swift */; };
 		A10000000000000000000004 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* Models.swift */; };
 		A10000000000000000000005 /* SyncPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* SyncPlanner.swift */; };
-		A10000000000000000000006 /* AudioRouteMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* AudioRouteMonitor.swift */; };
-		A10000000000000000000007 /* ShazamRecognitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* ShazamRecognitionEngine.swift */; };
-		A10000000000000000000008 /* AppleMusicPlaybackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* AppleMusicPlaybackEngine.swift */; };
+		A10000000000000000000006 /* AudioClipRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* AudioClipRecorder.swift */; };
+		A10000000000000000000007 /* AudDRecognitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* AudDRecognitionEngine.swift */; };
 		A10000000000000000000009 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B /* AVFoundation.framework */; };
-		A1000000000000000000000A /* MusicKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000C /* MusicKit.framework */; };
-		A1000000000000000000000B /* ShazamKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000D /* ShazamKit.framework */; };
 		A1000000000000000000000C /* SyncPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* SyncPlannerTests.swift */; };
 		A1000000000000000000000D /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000E /* XCTest.framework */; };
+		A1000000000000000000000E /* AudDTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* AudDTokenStore.swift */; };
+		A1000000000000000000000F /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* Security.framework */; };
+		A10000000000000000000010 /* RecognitionDiagnosticsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* RecognitionDiagnosticsStore.swift */; };
+		A10000000000000000000011 /* YouTubePlaybackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* YouTubePlaybackEngine.swift */; };
+		A10000000000000000000012 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* WebKit.framework */; };
+		A10000000000000000000013 /* ShazamIORecognitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000016 /* ShazamIORecognitionEngine.swift */; };
+		A10000000000000000000014 /* ShazamIO in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* ShazamIO */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -38,17 +42,21 @@
 		A20000000000000000000003 /* CoffeeSessionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoffeeSessionViewModel.swift; sourceTree = "<group>"; };
 		A20000000000000000000004 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		A20000000000000000000005 /* SyncPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncPlanner.swift; sourceTree = "<group>"; };
-		A20000000000000000000006 /* AudioRouteMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRouteMonitor.swift; sourceTree = "<group>"; };
-		A20000000000000000000007 /* ShazamRecognitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShazamRecognitionEngine.swift; sourceTree = "<group>"; };
-		A20000000000000000000008 /* AppleMusicPlaybackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleMusicPlaybackEngine.swift; sourceTree = "<group>"; };
+		A20000000000000000000006 /* AudioClipRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioClipRecorder.swift; sourceTree = "<group>"; };
+		A20000000000000000000007 /* AudDRecognitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudDRecognitionEngine.swift; sourceTree = "<group>"; };
 		A20000000000000000000009 /* SyncPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncPlannerTests.swift; sourceTree = "<group>"; };
 		A2000000000000000000000A /* CoffeeSync.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CoffeeSync.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A2000000000000000000000B /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
-		A2000000000000000000000C /* MusicKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MusicKit.framework; path = System/Library/Frameworks/MusicKit.framework; sourceTree = SDKROOT; };
-		A2000000000000000000000D /* ShazamKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ShazamKit.framework; path = System/Library/Frameworks/ShazamKit.framework; sourceTree = SDKROOT; };
 		A2000000000000000000000E /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
 		A2000000000000000000000F /* CoffeeSyncTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CoffeeSyncTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000000000000000000010 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A20000000000000000000011 /* AudDTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudDTokenStore.swift; sourceTree = "<group>"; };
+		A20000000000000000000012 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		A20000000000000000000013 /* RecognitionDiagnosticsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecognitionDiagnosticsStore.swift; sourceTree = "<group>"; };
+		A20000000000000000000014 /* YouTubePlaybackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubePlaybackEngine.swift; sourceTree = "<group>"; };
+		A20000000000000000000015 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
+		A20000000000000000000016 /* ShazamIORecognitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShazamIORecognitionEngine.swift; sourceTree = "<group>"; };
+		A20000000000000000000017 /* ShazamIO */ = {isa = PBXFileReference; lastKnownFileType = folder; path = DevelopmentSupport/ShazamIO; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,8 +65,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000009 /* AVFoundation.framework in Frameworks */,
-				A1000000000000000000000A /* MusicKit.framework in Frameworks */,
-				A1000000000000000000000B /* ShazamKit.framework in Frameworks */,
+				A1000000000000000000000F /* Security.framework in Frameworks */,
+				A10000000000000000000012 /* WebKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -89,6 +97,7 @@
 				A70000000000000000000003 /* App */,
 				A70000000000000000000004 /* Core */,
 				A70000000000000000000005 /* Services */,
+				A20000000000000000000017 /* ShazamIO */,
 				A70000000000000000000009 /* Resources */,
 			);
 			path = CoffeeSync;
@@ -116,9 +125,12 @@
 		A70000000000000000000005 /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				A20000000000000000000006 /* AudioRouteMonitor.swift */,
-				A20000000000000000000007 /* ShazamRecognitionEngine.swift */,
-				A20000000000000000000008 /* AppleMusicPlaybackEngine.swift */,
+				A20000000000000000000006 /* AudioClipRecorder.swift */,
+				A20000000000000000000007 /* AudDRecognitionEngine.swift */,
+				A20000000000000000000011 /* AudDTokenStore.swift */,
+				A20000000000000000000013 /* RecognitionDiagnosticsStore.swift */,
+				A20000000000000000000014 /* YouTubePlaybackEngine.swift */,
+				A20000000000000000000016 /* ShazamIORecognitionEngine.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -135,8 +147,8 @@
 			isa = PBXGroup;
 			children = (
 				A2000000000000000000000B /* AVFoundation.framework */,
-				A2000000000000000000000C /* MusicKit.framework */,
-				A2000000000000000000000D /* ShazamKit.framework */,
+				A20000000000000000000012 /* Security.framework */,
+				A20000000000000000000015 /* WebKit.framework */,
 				A2000000000000000000000E /* XCTest.framework */,
 			);
 			name = Frameworks;
@@ -238,6 +250,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10000000000000000000014 /* ShazamIO in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -253,9 +266,12 @@
 				A10000000000000000000003 /* CoffeeSessionViewModel.swift in Sources */,
 				A10000000000000000000004 /* Models.swift in Sources */,
 				A10000000000000000000005 /* SyncPlanner.swift in Sources */,
-				A10000000000000000000006 /* AudioRouteMonitor.swift in Sources */,
-				A10000000000000000000007 /* ShazamRecognitionEngine.swift in Sources */,
-				A10000000000000000000008 /* AppleMusicPlaybackEngine.swift in Sources */,
+				A10000000000000000000006 /* AudioClipRecorder.swift in Sources */,
+				A10000000000000000000007 /* AudDRecognitionEngine.swift in Sources */,
+				A1000000000000000000000E /* AudDTokenStore.swift in Sources */,
+				A10000000000000000000010 /* RecognitionDiagnosticsStore.swift in Sources */,
+				A10000000000000000000011 /* YouTubePlaybackEngine.swift in Sources */,
+				A10000000000000000000013 /* ShazamIORecognitionEngine.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -313,20 +329,19 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = Z2BA53W64Q;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CoffeeSync/Resources/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.CoffeeSync;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -334,20 +349,19 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = Z2BA53W64Q;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CoffeeSync/Resources/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.CoffeeSync;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -357,12 +371,11 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.CoffeeSyncTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
+				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CoffeeSync.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CoffeeSync";
 			};
 			name = Debug;
@@ -373,12 +386,11 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.CoffeeSyncTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
+				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CoffeeSync.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CoffeeSync";
 			};
 			name = Release;

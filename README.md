@@ -1,48 +1,119 @@
-# CoffeeSync prototype
+# CoffeeSync for Mac
 
-CoffeeSync is an iPhone-first SwiftUI prototype for the café use case: wear ANC headphones, manually start a coffee session, recognize the song playing in the room, then automatically start the matching Apple Music track at an estimated equivalent point in the song.
+CoffeeSync is a personal macOS utility for the café use case: it records a short
+microphone clip, asks AudD to identify the song playing in the room, searches
+YouTube for a playable match, then starts a visible embedded player at an
+estimated equivalent point in the song. The intent is to enjoy the café's music
+through ANC headphones while reducing speech and coffee-machine noise.
 
-## What is implemented
+## Why this is a Mac app
 
-- A manual Coffee Session UI with clear microphone/Apple Music permission states.
-- Headphone-route guard: the session does not start through the phone speaker.
-- Live microphone capture using `AVAudioEngine` and catalog matching through ShazamKit.
-- Automatic Apple Music lookup using the matched Apple Music ID and playback using `ApplicationMusicPlayer`.
-- A pure `SyncPlanner` that advances ShazamKit's match offset by processing, output-route, and manually calibrated latency; it also avoids seeking off the end of a song.
-- A track-switch gate that prevents repeat matches and short transient detections from repeatedly restarting playback.
-- An in-app latency calibration slider, current-match status, and a background-audio declaration for an active session.
+The archived iPhone implementation relied on ShazamKit and MusicKit App
+Services. Those services require Apple Developer Program access even when the
+app is for personal use. This macOS implementation avoids both frameworks:
 
-## Open in Xcode
+- **Recognition:** choose a 5-, 8-, or 10-second WAV capture in the app. ShazamIO
+  is generally most reliable with 10 seconds because its native recognizer is
+  designed around that window.
+- **Playback:** the official YouTube Data API v3 searches for an embeddable
+  video, then the official YouTube IFrame Player API plays it in-app from the
+  detected time.
+- **Credentials:** the AudD token and YouTube Data API key live in the local
+  macOS Keychain, never in source control or an Info.plist.
 
-Full Xcode is installed on this Mac and the app plus unit-test bundle compile successfully. To launch the app:
+The previous iOS prototype is retained in Git as the `ios-prototype` tag.
 
-1. Open `CoffeeSync.xcodeproj`.
-2. In Signing & Capabilities, choose an Apple Developer team and a unique bundle ID.
-3. In the [Apple Developer portal](https://developer.apple.com/account/resources/identifiers/list), enable **ShazamKit** for that App ID. ShazamKit is enabled at the App ID; it does not need a hand-authored entitlement.
-4. Add the MusicKit capability if Xcode offers it, then run on a physical iPhone signed in to an Apple Music account with an active playback subscription.
-5. Connect ANC headphones, approve microphone and Apple Music access, then tap **開始咖啡工作階段**.
+## Setup and run
 
-## Local verification
+1. Create an AudD account and copy an API token from its dashboard. The AudD
+   documentation describes the request format and its current trial/usage
+   terms: <https://docs.audd.io/>.
+2. Create a Google Cloud project, enable **YouTube Data API v3**, then create
+   an API key. Google documents the required project and API setup:
+   <https://developers.google.com/youtube/v3/getting-started>.
+3. Open `CoffeeSync.xcodeproj` in Xcode and choose the **CoffeeSync** scheme
+   with **My Mac** as the destination.
+4. Run the app. Paste both keys in their corresponding fields and select
+   **儲存至 Keychain** for each.
+5. Click **開始咖啡工作階段** and approve microphone access for CoffeeSync.
+6. For recognition troubleshooting, keep **開發診斷：保留每輪 WAV 與辨識 log**
+   enabled and select **開啟診斷資料夾** after a failed attempt.
+7. Use the Mac's built-in microphone to hear the room and route the Mac's audio
+   to your ANC headphones. Keeping AirPods as output-only avoids the Bluetooth
+   hands-free profile's lower audio quality.
 
-The source and test target compile with Xcode 26.6. An iOS Simulator runtime is required to execute the XCTest suite:
+## ShazamIO development baseline
+
+The `codex/shazamio-dev-baseline` branch adds a **ShazamIO（開發基線）**
+provider and a **雙重比較（同一段 WAV）** mode. This development branch vendors
+a portable Python 3.10 runtime, ShazamIO 0.8.1, and shazamio-core 1.1.2 under
+`CoffeeSync/DevelopmentSupport/ShazamIO`, then copies that folder into the app
+bundle as a resource. It does not require `~/Documents/shazamio-benchmark`.
+
+1. In CoffeeSync, select **ShazamIO（開發基線）**, then choose
+   **驗證內嵌 ShazamIO 基線**. This starts the bundled runner but does not
+   request microphone access, send audio, or contact the recognition service.
+2. For a fair A/B test, select **雙重比較（同一段 WAV）**. CoffeeSync records one
+   clip, passes that exact file to both AudD and ShazamIO, displays the two
+   title/artist outcomes, and writes one diagnostic JSON log per provider.
+   Comparison mode intentionally does not auto-play YouTube, so it needs no
+   YouTube API key.
+
+ShazamIO is an unofficial client of an undocumented Shazam endpoint. This
+branch is for private, development-only accuracy comparison and must not be
+treated as a production recognition integration. The ShazamIO fingerprint offset
+is passed to the YouTube seek path when ShazamIO is selected alone; comparison
+mode does not auto-play so it can report a clean A/B result.
+
+For a command-line build that does not require an Apple Developer Program
+membership:
 
 ```sh
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
 xcodebuild -project CoffeeSync.xcodeproj -scheme CoffeeSync \
-  -destination 'platform=iOS Simulator,name=iPhone 16' \
-  -derivedDataPath /private/tmp/CoffeeSyncDerivedData test \
-  CODE_SIGNING_ALLOWED=NO
+  -destination 'platform=macOS' \
+  -derivedDataPath /private/tmp/CoffeeSyncDerivedData-macOS \
+  build CODE_SIGNING_ALLOWED=NO
 ```
 
-The unit tests cover timing-offset calculation, end-of-track clamping, duplicate-match suppression, and retrying a failed playback attempt.
+## How a session works
 
-## Validation plan
+1. Record the selected 5-, 8-, or 10-second ambient-audio window.
+2. Send the temporary WAV to the selected recognition provider.
+3. Read the title, artist, and (when supplied by AudD) match timecode.
+4. Add the selected capture baseline (five, eight, or ten seconds), elapsed processing
+   time, and up to 15 seconds of user-calibrated extra output allowance.
+5. Search YouTube's official Data API for an embeddable video using the title,
+   artist, and `official audio` query, then rank the returned candidates.
+6. Load the selected video in a visible IFrame Player and ask it to start from
+   the estimated offset. The app rechecks roughly every 45 seconds and avoids
+   restarting a stable match.
 
-Use a physical iPhone in a café-like setup with known tracks. Record, for each test, recognition time, selected catalog version, initial timing error, and whether a second recognition tried to restart the same song. Acceptance targets for the next iteration are: popular catalog tracks identified within 10 seconds, initial perceived alignment within 1.5 seconds after calibration, and no repeat restarts while the same song remains on.
+## Development diagnostics
 
-## Known prototype limits
+The diagnostic toggle is enabled by default during development. It retains the
+most recent 25 attempts in:
 
-- `matchOffset` aligns against the catalog version. Live performances, remixes, speed changes, and venue DSP can drift or fail to match.
-- The first real-device spike should verify that simultaneous microphone capture and `ApplicationMusicPlayer` keep the desired Bluetooth/AirPods route. The implementation blocks speaker output but does not control an earphone's ANC mode; the wearer enables ANC manually.
-- Apple Music availability is storefront and subscription dependent. If ShazamKit cannot provide a playable Apple Music ID, the prototype reports the condition instead of playing a guessed track.
-- The app is designed for the user's personal Apple Music playback, never for rebroadcasting café audio.
+`~/Library/Application Support/CoffeeSync/Recognition Diagnostics/`
+
+Each attempt has a `.wav` recording and a matching `.json` log. The log includes
+the provider, clip size, service status, a truncated response, and any app-side
+error; it deliberately never includes the API token. These files contain ambient
+room audio, so do not upload or share them casually.
+
+## Limits and privacy
+
+- AudD is an external recognition service: every active recognition cycle
+  uploads a short audio clip. Development diagnostics retain the most recent
+  25 new clips locally while the toggle is on; regular temporary files are
+  deleted after each request.
+- This app does not control an earphone's ANC mode; enable ANC on your own
+  headphones.
+- Song matching and offset alignment remain approximate. Remixes, live
+  versions, heavy room noise, delayed player startup, and YouTube search
+  rankings can drift or choose an unintended version. The selected video title
+  and channel are shown before playback for verification.
+- YouTube Music does not expose a separate public catalog API for this use
+  case. CoffeeSync uses the supported YouTube Data API and visible IFrame
+  Player instead; it does not use unofficial cookie-based or reverse-engineered
+  YouTube Music APIs. The app can build and run for your own Mac without App
+  Store distribution or Apple Developer Program enrollment.
