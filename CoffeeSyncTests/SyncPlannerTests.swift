@@ -8,7 +8,7 @@ final class SyncPlannerTests: XCTestCase {
         let song = RecognizedSong(
             title: "Roast",
             artist: "Beans",
-            appleMusicID: "i.example",
+            musicURL: URL(string: "https://music.apple.com/example"),
             matchOffset: 42,
             receivedAt: receivedAt
         )
@@ -28,7 +28,7 @@ final class SyncPlannerTests: XCTestCase {
         let song = RecognizedSong(
             title: "Last Sip",
             artist: "Beans",
-            appleMusicID: "i.example",
+            musicURL: URL(string: "https://music.apple.com/example"),
             matchOffset: 179.8,
             receivedAt: Date(timeIntervalSinceReferenceDate: 10)
         )
@@ -43,8 +43,8 @@ final class SyncPlannerTests: XCTestCase {
     }
 
     func testGateRejectsTheSameSongAndRapidTrackThrashing() {
-        let first = RecognizedSong(title: "One", artist: "Artist", appleMusicID: "i.one", matchOffset: 10)
-        let second = RecognizedSong(title: "Two", artist: "Artist", appleMusicID: "i.two", matchOffset: 10)
+        let first = RecognizedSong(title: "One", artist: "Artist", musicURL: URL(string: "https://music.apple.com/one"), matchOffset: 10)
+        let second = RecognizedSong(title: "Two", artist: "Artist", musicURL: URL(string: "https://music.apple.com/two"), matchOffset: 10)
         var gate = TrackSwitchGate(minimumSwitchInterval: 8)
         let start = Date(timeIntervalSinceReferenceDate: 10)
 
@@ -56,12 +56,39 @@ final class SyncPlannerTests: XCTestCase {
     }
 
     func testGateAllowsRetryAfterAFailedPlaybackAttempt() {
-        let song = RecognizedSong(title: "Retry", artist: "Artist", appleMusicID: "i.retry", matchOffset: 10)
+        let song = RecognizedSong(title: "Retry", artist: "Artist", musicURL: URL(string: "https://music.apple.com/retry"), matchOffset: 10)
         var gate = TrackSwitchGate()
         let now = Date(timeIntervalSinceReferenceDate: 100)
 
         XCTAssertTrue(gate.beginAttempt(for: song, at: now))
         gate.cancelAttempt()
         XCTAssertTrue(gate.beginAttempt(for: song, at: now.addingTimeInterval(1)))
+    }
+
+    func testAudDTimecodeSupportsMinuteAndHourFormats() {
+        XCTAssertEqual(AudDTimecode.seconds(from: "2:03"), 123, accuracy: 0.000_1)
+        XCTAssertEqual(AudDTimecode.seconds(from: "1:02:03"), 3_723, accuracy: 0.000_1)
+        XCTAssertEqual(AudDTimecode.seconds(from: nil), 0, accuracy: 0.000_1)
+    }
+
+    func testAudDResponseUsesTimecodeAndAppleMusicURL() throws {
+        let response = """
+        {
+          "status": "success",
+          "result": {
+            "title": "Everybody Wants To Rule The World",
+            "artist": "Tears For Fears",
+            "timecode": "00:56",
+            "apple_music": { "url": "https://music.apple.com/us/album/example?i=123" }
+          }
+        }
+        """
+
+        let song = try AudDRecognitionEngine().decodeRecognition(Data(response.utf8))
+
+        XCTAssertEqual(song.title, "Everybody Wants To Rule The World")
+        XCTAssertEqual(song.artist, "Tears For Fears")
+        XCTAssertEqual(song.matchOffset, 56, accuracy: 0.000_1)
+        XCTAssertEqual(song.musicURL?.host, "music.apple.com")
     }
 }

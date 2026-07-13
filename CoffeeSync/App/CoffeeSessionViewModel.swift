@@ -8,74 +8,64 @@ final class CoffeeSessionViewModel: ObservableObject {
     @Published private(set) var lastRecognition: RecognizedSong?
     @Published private(set) var currentPlan: PlaybackPlan?
     @Published private(set) var sessionStartedAt: Date?
-    @Published private(set) var statusDetail = "戴上降噪耳機後，開始一段咖啡工作階段。"
+    @Published private(set) var statusDetail = "貼上 AudD token，開始讓 Mac 聽店內音樂。"
     @Published var automaticSwitching = true
-    @Published var latencyAdjustment: TimeInterval = 0.20
+    @Published var latencyAdjustment: TimeInterval = 0.70
+    @Published var audDToken: String
 
-    private let recognizer = ShazamRecognitionEngine()
-    private let playback = AppleMusicPlaybackEngine()
-    private let planner = SyncPlanner()
-    private var switchGate = TrackSwitchGate()
+    private let recorder = AudioClipRecorder()
+    private let recognizer = AudDRecognitionEngine()
+    private let playback = MusicAppPlaybackEngine()
+    private let planner = SyncPlanner(startupAllowance: 0.55)
+    private var switchGate = TrackSwitchGate(minimumSwitchInterval: 15)
+    private var nextCycle: Task<Void, Never>?
+    private var sessionIsActive = false
 
     init() {
-        recognizer.onMatch = { [weak self] song in
+        audDToken = AudDTokenStore.load()
+        recorder.onClipFinished = { [weak self] url in
             Task { @MainActor in
-                await self?.handleRecognition(song)
-            }
-        }
-        recognizer.onError = { [weak self] message in
-            Task { @MainActor in
-                self?.statusDetail = "辨識服務：\(message)"
+                await self?.recognize(url)
             }
         }
     }
 
-    var isActive: Bool {
-        switch phase {
-        case .listening, .switching, .playing: true
-        default: false
+    var isActive: Bool { sessionIsActive }
+
+    func saveToken() {
+        do {
+            try AudDTokenStore.save(audDToken.trimmingCharacters(in: .whitespacesAndNewlines))
+            statusDetail = audDToken.isEmpty ? "AudD token 已從 Keychain 移除。" : "AudD token 已儲存在這台 Mac 的 Keychain。"
+        } catch {
+            phase = .failed(error.localizedDescription)
+            statusDetail = "無法寫入 Keychain：\(error.localizedDescription)"
         }
     }
 
     func toggleSession() {
-        isActive ? stopSession() : startSession()
+        sessionIsActive ? stopSession() : startSession()
     }
 
     func startSession() {
-        Task {
-            guard AudioRouteMonitor.hasHeadphones else {
-                phase = .needsHeadphones
-                statusDetail = "為避免把 Apple Music 播回店內，請先連接有降噪功能的耳機。"
-                return
-            }
-
-            phase = .requestingPermissions
-            statusDetail = "正在要求麥克風與 Apple Music 權限。"
-
-            let microphoneGranted = await AVAudioApplication.requestRecordPermission()
-            guard microphoneGranted else {
-                phase = .unavailable("麥克風權限未允許")
-                statusDetail = "CoffeeSync 不會儲存錄音；它需要麥克風建立音樂指紋。"
-                return
-            }
-
-            do {
-                try await playback.requestAuthorization()
-                try recognizer.start()
-                switchGate.reset()
-                sessionStartedAt = .now
-                phase = .listening
-                statusDetail = "正在以 Apple 的音樂指紋辨識店內歌曲。"
-            } catch {
-                phase = .failed(error.localizedDescription)
-                statusDetail = error.localizedDescription
-            }
+        let token = audDToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !token.isEmpty else {
+            phase = .needsToken
+            statusDetail = "先貼上 AudD API token 並儲存，才能辨識環境音。"
+            return
         }
+        saveToken()
+        sessionIsActive = true
+        switchGate.reset()
+        sessionStartedAt = .now
+        requestMicrophoneAndStart()
     }
 
     func stopSession() {
-        recognizer.stop()
-        Task { await playback.stop() }
+        sessionIsActive = false
+        nextCycle?.cancel()
+        nextCycle = nil
+        recorder.cancel()
+        playback.stop()
         switchGate.reset()
         currentPlan = nil
         sessionStartedAt = nil
@@ -83,36 +73,101 @@ final class CoffeeSessionViewModel: ObservableObject {
         statusDetail = "工作階段已結束。"
     }
 
-    private func handleRecognition(_ song: RecognizedSong) async {
-        lastRecognition = song
-
-        guard automaticSwitching else {
-            statusDetail = "已辨識 \(song.displayName)，等待你手動切換。"
-            return
+    private func requestMicrophoneAndStart() {
+        Task {
+            phase = .requestingMicrophone
+            statusDetail = "macOS 會要求允許 CoffeeSync 使用麥克風。"
+            let granted = await requestMicrophoneAccess()
+            guard granted else {
+                sessionIsActive = false
+                phase = .unavailable("麥克風權限未允許")
+                statusDetail = "CoffeeSync 不會保存錄音；它只會上傳單次 10 秒片段給 AudD 辨識。"
+                return
+            }
+            startRecognitionCycle()
         }
+    }
 
-        guard switchGate.beginAttempt(for: song) else {
-            statusDetail = "持續確認 \(song.title)；維持目前播放。"
-            return
+    private func startRecognitionCycle() {
+        guard sessionIsActive else { return }
+        do {
+            phase = .recording
+            statusDetail = "正在擷取 10 秒環境音，使用 Mac 內建麥克風效果最佳。"
+            try recorder.record(duration: 10)
+        } catch {
+            sessionIsActive = false
+            phase = .failed(error.localizedDescription)
+            statusDetail = error.localizedDescription
         }
+    }
 
-        let plan = planner.plan(
-            for: song,
-            outputLatency: AudioRouteMonitor.estimatedOutputLatency + latencyAdjustment
-        )
-        currentPlan = plan
-        phase = .switching(song)
-        statusDetail = "從第 \(time(plan.targetOffset)) 對時接手播放。"
+    private func recognize(_ url: URL) async {
+        defer { try? FileManager.default.removeItem(at: url) }
+        guard sessionIsActive else { return }
+        phase = .recognizing
+        statusDetail = "正在將短音訊片段送到 AudD 辨識。"
 
         do {
-            try await playback.play(song, from: plan.targetOffset)
+            let song = try await recognizer.recognize(fileAt: url, token: audDToken)
+            await handleRecognition(song)
+        } catch {
+            phase = .unavailable(error.localizedDescription)
+            statusDetail = error.localizedDescription
+            scheduleNextRecognition(after: 18)
+        }
+    }
+
+    private func handleRecognition(_ song: RecognizedSong) async {
+        lastRecognition = song
+        guard automaticSwitching else {
+            phase = .listening
+            statusDetail = "已辨識 \(song.displayName)，已關閉自動播放。"
+            scheduleNextRecognition(after: 45)
+            return
+        }
+        guard switchGate.beginAttempt(for: song) else {
+            phase = .listening
+            statusDetail = "持續確認 \(song.title)；維持目前播放。"
+            scheduleNextRecognition(after: 45)
+            return
+        }
+
+        let plan = planner.plan(for: song, outputLatency: latencyAdjustment)
+        currentPlan = plan
+        phase = .switching(song)
+        statusDetail = "Music.app 將從第 \(time(plan.targetOffset)) 接手播放。"
+
+        do {
+            try playback.play(song, from: plan.targetOffset)
             switchGate.commitAttempt(for: song)
             phase = .playing(song, plan)
-            statusDetail = "已在耳機中同步播放；店內背景聲會由降噪耳機降低。"
+            statusDetail = "已要求 Music.app 同步播放；第一次會請你允許控制 Music。"
+            scheduleNextRecognition(after: 45)
         } catch {
             switchGate.cancelAttempt()
             phase = .unavailable(error.localizedDescription)
             statusDetail = error.localizedDescription
+            scheduleNextRecognition(after: 18)
+        }
+    }
+
+    private func scheduleNextRecognition(after seconds: TimeInterval) {
+        nextCycle?.cancel()
+        nextCycle = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(seconds))
+            guard !Task.isCancelled else { return }
+            self?.startRecognitionCycle()
+        }
+    }
+
+    private func requestMicrophoneAccess() async -> Bool {
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        case .authorized: true
+        case .notDetermined:
+            await withCheckedContinuation { continuation in
+                AVCaptureDevice.requestAccess(for: .audio) { continuation.resume(returning: $0) }
+            }
+        default: false
         }
     }
 

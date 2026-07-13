@@ -1,6 +1,6 @@
 import Foundation
 
-/// Converts a ShazamKit match into the point that Apple Music should play now.
+/// Converts an AudD match into the point that Music.app should play now.
 ///
 /// A match offset refers to the catalog recording.  By the time the app receives
 /// that result and asks Apple Music to start, the café track has advanced.  This
@@ -34,7 +34,7 @@ struct SyncPlanner: Sendable {
     }
 }
 
-/// Avoids restarting the same song whenever ShazamKit reports the same match.
+/// Avoids restarting the same song whenever AudD reports the same match.
 struct TrackSwitchGate: Sendable {
     var minimumSwitchInterval: TimeInterval = 8
     private(set) var currentIdentity: String?

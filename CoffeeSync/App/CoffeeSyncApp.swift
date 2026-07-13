@@ -6,5 +6,6 @@ struct CoffeeSyncApp: App {
         WindowGroup {
             ContentView()
         }
+        .windowResizability(.contentSize)
     }
 }

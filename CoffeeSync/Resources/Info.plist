@@ -20,20 +20,9 @@
     <string>1.0</string>
     <key>CFBundleVersion</key>
     <string>1</string>
-    <key>LSRequiresIPhoneOS</key>
-    <true/>
     <key>NSMicrophoneUsageDescription</key>
-    <string>CoffeeSync needs microphone access only while a coffee session is active to recognize nearby music and synchronize Apple Music playback.</string>
-    <key>NSAppleMusicUsageDescription</key>
-    <string>CoffeeSync needs access to Apple Music to play the same song currently identified in your café session.</string>
-    <key>UIApplicationSceneManifest</key>
-    <dict>
-        <key>UIApplicationSupportsMultipleScenes</key>
-        <false/>
-    </dict>
-    <key>UIBackgroundModes</key>
-    <array>
-        <string>audio</string>
-    </array>
+    <string>CoffeeSync records short clips only while a coffee session is active to identify nearby music.</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>CoffeeSync needs permission to control Music so it can play the identified song at the matching time.</string>
 </dict>
 </plist>

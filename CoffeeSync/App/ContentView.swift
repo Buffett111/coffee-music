@@ -1,67 +1,78 @@
-import Foundation
 import SwiftUI
 
 struct ContentView: View {
     @StateObject private var model = CoffeeSessionViewModel()
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                LinearGradient(
-                    colors: [Color(red: 0.13, green: 0.08, blue: 0.06), Color(red: 0.31, green: 0.18, blue: 0.12)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
+        ZStack {
+            LinearGradient(
+                colors: [Color(red: 0.10, green: 0.06, blue: 0.04), Color(red: 0.30, green: 0.17, blue: 0.10)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
 
-                ScrollView {
-                    VStack(spacing: 24) {
-                        header
-                        sessionButton
-                        statusCard
-                        playbackCard
-                        controlsCard
-                        privacyNote
-                    }
-                    .padding(20)
+            ScrollView {
+                VStack(spacing: 18) {
+                    header
+                    tokenCard
+                    sessionButton
+                    statusCard
+                    playbackCard
+                    controlsCard
+                    privacyNote
                 }
+                .frame(maxWidth: 720)
+                .padding(28)
             }
-            .navigationTitle("CoffeeSync")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(.dark, for: .navigationBar)
         }
+        .frame(minWidth: 640, minHeight: 670)
         .tint(.orange)
     }
 
     private var header: some View {
-        VStack(spacing: 8) {
+        HStack(spacing: 14) {
             Image(systemName: "cup.and.saucer.fill")
-                .font(.system(size: 42))
+                .font(.system(size: 38))
                 .foregroundStyle(.orange)
-            Text("把咖啡廳的音樂，留在耳機裡")
-                .font(.title2.weight(.bold))
+            VStack(alignment: .leading, spacing: 4) {
+                Text("CoffeeSync for Mac")
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(.white)
+                Text("AudD 辨識店內音樂，讓 Music.app 在耳機裡接手播放。")
+                    .foregroundStyle(.white.opacity(0.72))
+            }
+            Spacer()
+        }
+    }
+
+    private var tokenCard: some View {
+        card {
+            Label("AudD 連線設定", systemImage: "key.fill")
+                .font(.headline)
                 .foregroundStyle(.white)
-            Text("自動辨識店內歌曲，從接近現場進度的時間點播放。")
-                .font(.subheadline)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.white.opacity(0.72))
+            HStack {
+                SecureField("貼上 AudD API token", text: $model.audDToken)
+                    .textFieldStyle(.roundedBorder)
+                Button("儲存至 Keychain", action: model.saveToken)
+                    .buttonStyle(.borderedProminent)
+            }
+            Text("Token 只保存在這台 Mac 的 Keychain，不會寫入專案或 Git。")
+                .font(.footnote)
+                .foregroundStyle(.white.opacity(0.62))
         }
     }
 
     private var sessionButton: some View {
         Button(action: model.toggleSession) {
-            VStack(spacing: 10) {
-                Image(systemName: model.isActive ? "stop.fill" : "waveform")
-                    .font(.system(size: 34, weight: .semibold))
-                Text(model.isActive ? "結束咖啡工作階段" : "開始咖啡工作階段")
-                    .font(.headline)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 26)
-            .foregroundStyle(.white)
-            .background(model.isActive ? Color.red.opacity(0.86) : Color.orange.opacity(0.86), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            Label(model.isActive ? "結束咖啡工作階段" : "開始咖啡工作階段", systemImage: model.isActive ? "stop.fill" : "waveform")
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 18)
         }
-        .accessibilityHint("會要求麥克風及 Apple Music 權限")
+        .buttonStyle(.borderedProminent)
+        .tint(model.isActive ? .red : .orange)
+        .controlSize(.large)
     }
 
     private var statusCard: some View {
@@ -74,9 +85,9 @@ struct ContentView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(model.phase.title)
                         .font(.headline)
+                        .foregroundStyle(.white)
                     Text(model.statusDetail)
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.white.opacity(0.72))
                 }
                 Spacer()
             }
@@ -93,13 +104,11 @@ struct ContentView: View {
                 Text(song.title)
                     .font(.title3.weight(.bold))
                     .foregroundStyle(.white)
-                    .padding(.top, 4)
                 Text(song.artist)
                     .foregroundStyle(.white.opacity(0.72))
                 if let plan = model.currentPlan {
                     Divider().overlay(.white.opacity(0.18)).padding(.vertical, 4)
-                    Label("耳機從 \(format(plan.targetOffset)) 開始播放", systemImage: "scope")
-                        .font(.subheadline)
+                    Label("Music.app 從 \(format(plan.targetOffset)) 開始播放", systemImage: "scope")
                         .foregroundStyle(.white.opacity(0.88))
                 }
             }
@@ -108,43 +117,43 @@ struct ContentView: View {
 
     private var controlsCard: some View {
         card {
-            Toggle("辨識後自動切換 Apple Music", isOn: $model.automaticSwitching)
+            Toggle("辨識後自動控制 Music.app", isOn: $model.automaticSwitching)
                 .foregroundStyle(.white)
             Divider().overlay(.white.opacity(0.18)).padding(.vertical, 6)
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text("耳機延遲微調")
+                    Text("啟動與耳機延遲微調").foregroundStyle(.white)
                     Spacer()
                     Text(String(format: "+%.2fs", model.latencyAdjustment))
                         .monospacedDigit()
                         .foregroundStyle(.orange)
                 }
-                .foregroundStyle(.white)
-                Slider(value: $model.latencyAdjustment, in: 0...1.5, step: 0.05)
+                Slider(value: $model.latencyAdjustment, in: 0...2, step: 0.05)
             }
         }
     }
 
     private var privacyNote: some View {
-        Label("僅在你手動開始工作階段時使用麥克風。CoffeeSync 不保存錄音，只將音訊交給 ShazamKit 產生比對。", systemImage: "lock.fill")
+        Label("每輪只錄製 10 秒並上傳 AudD 辨識；完成後會立即刪除暫存檔。請用 Mac 內建麥克風收音、AirPods 僅作輸出，避免降低藍牙音質。", systemImage: "lock.fill")
             .font(.footnote)
-            .foregroundStyle(.white.opacity(0.6))
-            .padding(.horizontal, 6)
+            .foregroundStyle(.white.opacity(0.62))
     }
 
     private func card<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        content()
+        VStack(alignment: .leading, spacing: 10, content: content)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(18)
-            .background(.white.opacity(0.10), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .background(.white.opacity(0.10), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     private var statusIcon: String {
         switch model.phase {
         case .idle: "cup.and.saucer"
-        case .needsHeadphones: "headphones"
-        case .requestingPermissions: "lock.shield"
-        case .listening: "waveform"
+        case .needsToken: "key.slash"
+        case .requestingMicrophone: "lock.shield"
+        case .recording: "waveform"
+        case .recognizing: "sparkle.magnifyingglass"
+        case .listening: "clock.arrow.circlepath"
         case .switching: "arrow.triangle.2.circlepath"
         case .playing: "play.circle.fill"
         case .unavailable: "music.note.slash"
