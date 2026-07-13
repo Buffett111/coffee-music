@@ -1,7 +1,7 @@
 # Third-party notices
 
 This directory is a development-only, self-contained runtime bundled by the
-`codex/shazamio-dev-baseline` branch.
+`shazamio-dev-baseline` branch.
 
 - CPython 3.10.20 portable runtime: Python Software Foundation License.
 - ShazamIO 0.8.1: MIT License, <https://github.com/shazamio/ShazamIO>.
