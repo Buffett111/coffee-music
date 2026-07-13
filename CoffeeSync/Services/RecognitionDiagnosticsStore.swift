@@ -1,7 +1,7 @@
 import Foundation
 
 struct RecognitionDiagnosticLog: Codable {
-    let diagnostic: AudDRecognitionDiagnostic
+    let diagnostic: RecognitionDiagnostic
     let preservedAudioFilename: String?
     let recognizedSong: LoggedSong?
 
@@ -47,7 +47,7 @@ enum RecognitionDiagnosticsStore {
 
     @discardableResult
     static func writeLog(
-        diagnostic: AudDRecognitionDiagnostic,
+        diagnostic: RecognitionDiagnostic,
         preservedAudioURL: URL?,
         song: RecognizedSong?
     ) throws -> URL {

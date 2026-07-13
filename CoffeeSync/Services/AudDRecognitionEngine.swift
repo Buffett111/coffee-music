@@ -20,8 +20,9 @@ enum AudDError: LocalizedError {
     }
 }
 
-struct AudDRecognitionDiagnostic: Codable, Sendable {
+struct RecognitionDiagnostic: Codable, Sendable {
     let attemptID: UUID
+    let provider: RecognitionProvider
     let recordedAt: Date
     let sourceFilename: String
     let audioByteCount: Int?
@@ -31,9 +32,9 @@ struct AudDRecognitionDiagnostic: Codable, Sendable {
     let responseExcerpt: String?
 }
 
-struct AudDRecognitionAttempt: Sendable {
+struct RecognitionAttempt: Sendable {
     let song: RecognizedSong?
-    let diagnostic: AudDRecognitionDiagnostic
+    let diagnostic: RecognitionDiagnostic
 
     var failureDescription: String? { diagnostic.errorDescription }
 }
@@ -46,7 +47,7 @@ final class AudDRecognitionEngine {
         fileAt fileURL: URL,
         token: String,
         attemptID: UUID = UUID()
-    ) async -> AudDRecognitionAttempt {
+    ) async -> RecognitionAttempt {
         let recordedAt = Date()
         let filename = fileURL.lastPathComponent
         let byteCount = (try? fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? nil
@@ -111,10 +112,11 @@ final class AudDRecognitionEngine {
 
             do {
                 let song = try decodeRecognition(data)
-                return AudDRecognitionAttempt(
+                return RecognitionAttempt(
                     song: song,
-                    diagnostic: AudDRecognitionDiagnostic(
+                    diagnostic: RecognitionDiagnostic(
                         attemptID: attemptID,
+                        provider: .audD,
                         recordedAt: recordedAt,
                         sourceFilename: filename,
                         audioByteCount: byteCount,
@@ -179,11 +181,12 @@ final class AudDRecognitionEngine {
         serviceStatus: String? = nil,
         responseExcerpt: String? = nil,
         error: Error
-    ) -> AudDRecognitionAttempt {
-        AudDRecognitionAttempt(
+    ) -> RecognitionAttempt {
+        RecognitionAttempt(
             song: nil,
-            diagnostic: AudDRecognitionDiagnostic(
+            diagnostic: RecognitionDiagnostic(
                 attemptID: attemptID,
+                provider: .audD,
                 recordedAt: recordedAt,
                 sourceFilename: filename,
                 audioByteCount: byteCount,

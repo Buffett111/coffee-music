@@ -1,13 +1,55 @@
 import Foundation
 
+enum RecognitionProvider: String, CaseIterable, Codable, Identifiable, Sendable {
+    case audD
+    case shazamIO
+    case comparison
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .audD: "AudD"
+        case .shazamIO: "ShazamIO（開發基線）"
+        case .comparison: "雙重比較（同一段 WAV）"
+        }
+    }
+
+    var recognitionDescription: String {
+        switch self {
+        case .audD: "AudD 正在辨識"
+        case .shazamIO: "ShazamIO 正在辨識"
+        case .comparison: "AudD 與 ShazamIO 正在辨識同一段 WAV"
+        }
+    }
+
+    var requiresAudDToken: Bool { self == .audD || self == .comparison }
+    var requiresShazamIO: Bool { self == .shazamIO || self == .comparison }
+}
+
+struct RecognitionComparison: Equatable, Sendable {
+    struct Result: Equatable, Sendable {
+        let provider: RecognitionProvider
+        let song: RecognizedSong?
+        let failureDescription: String?
+
+        var displayText: String {
+            if let song { return song.displayName }
+            return failureDescription ?? "未辨識"
+        }
+    }
+
+    let audD: Result
+    let shazamIO: Result
+}
+
 struct RecognizedSong: Equatable, Identifiable, Sendable {
     let id: UUID
     let title: String
     let artist: String
-    /// AudD's Apple Music link, used only as a fallback if the song is absent
-    /// from the user's synced Music library.
+    /// Optional catalog URL returned by the recognition provider.
     let musicURL: URL?
-    /// The point in the catalog recording at which AudD found the match.
+    /// The point in the catalog recording at which the provider found the match.
     let matchOffset: TimeInterval
     /// When the framework delivered this result to the app.
     let receivedAt: Date
@@ -59,7 +101,7 @@ enum CoffeeSessionPhase: Equatable {
         case .needsToken: "需要 AudD token"
         case .requestingMicrophone: "正在取得麥克風權限"
         case .recording: "正在擷取環境音"
-        case .recognizing: "AudD 正在辨識"
+        case .recognizing: "正在辨識"
         case .listening: "等待下一輪辨識"
         case .switching: "正在對時切換"
         case .playing: "已同步播放"

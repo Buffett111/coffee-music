@@ -107,23 +107,82 @@ final class SyncPlannerTests: XCTestCase {
         XCTAssertNil(attempt.diagnostic.responseExcerpt)
     }
 
-    func testMusicPlayerSnapshotOnlyAllowsSeekForPlayingTrackWithEnoughDuration() {
-        XCTAssertTrue(MusicPlayerSnapshot.parse("playing|220.2").canSeek(to: 21.536))
-        XCTAssertFalse(MusicPlayerSnapshot.parse("paused|220.2").canSeek(to: 21.536))
-        XCTAssertFalse(MusicPlayerSnapshot.parse("playing|20").canSeek(to: 21.536))
-        XCTAssertFalse(MusicPlayerSnapshot.parse("unknown|0").canSeek(to: 21.536))
+    func testYouTubeSearchPrefersTheTitleAndArtistMatch() {
+        let song = RecognizedSong(title: "Wish You The Best", artist: "Lewis Capaldi", musicURL: nil, matchOffset: 12)
+        let candidates = [
+            YouTubeSearchCandidate(videoID: "wrong", title: "Best of Pop", channelTitle: "Playlist Hub"),
+            YouTubeSearchCandidate(videoID: "right", title: "Lewis Capaldi - Wish You The Best (Official Audio)", channelTitle: "Lewis Capaldi")
+        ]
+
+        XCTAssertEqual(YouTubePlaybackEngine.bestCandidate(in: candidates, for: song)?.videoID, "right")
     }
 
-    func testMusicPlayerSnapshotRequiresTheRecognizedSongBeforeSeeking() {
-        let song = RecognizedSong(title: "Hold Me While You Wait", artist: "Lewis Capaldi", musicURL: nil, matchOffset: 12)
+    func testShazamIORunnerResponseUsesTitleArtistAndReturnedOffsetForSeeking() throws {
+        let response = """
+        {
+          "input": "/tmp/clip.wav",
+          "recognized": true,
+          "matchCount": 1,
+          "latencyMs": 823,
+          "track": {
+            "title": "Espresso",
+            "subtitle": "Sabrina Carpenter",
+            "key": "123"
+          },
+          "firstMatch": {
+            "offset": 21.536,
+            "timeSkew": 0.0,
+            "frequencySkew": 0.0
+          }
+        }
+        """
 
-        XCTAssertTrue(MusicPlayerSnapshot.parse("playing|219|Hold Me While You Wait|Lewis Capaldi").matches(song))
-        XCTAssertFalse(MusicPlayerSnapshot.parse("playing|219|AutoPlay|").matches(song))
+        let attempt = try ShazamIORecognitionEngine().decodeRecognition(
+            Data(response.utf8),
+            attemptID: UUID(),
+            recordedAt: .now,
+            filename: "clip.wav",
+            byteCount: 1_024
+        )
+
+        XCTAssertEqual(attempt.diagnostic.provider, .shazamIO)
+        XCTAssertEqual(attempt.song?.title, "Espresso")
+        XCTAssertEqual(attempt.song?.artist, "Sabrina Carpenter")
+        XCTAssertEqual(try XCTUnwrap(attempt.song).matchOffset, 21.536, accuracy: 0.000_1)
     }
 
-    func testCatalogFallbackDoesNotClaimPlayback() {
-        XCTAssertNotEqual(MusicAppPlaybackResult.catalogOpened, .synchronized)
-        XCTAssertNotEqual(MusicAppPlaybackResult.catalogOpened, .playingWithoutSynchronization)
-        XCTAssertNotEqual(MusicAppPlaybackResult.targetDidNotStart, .synchronized)
+    func testShazamIONoMatchPreservesTheRunnerFailureInDiagnostics() throws {
+        let response = """
+        { "recognized": false, "matchCount": 0, "track": null, "error": "no match" }
+        """
+
+        let attempt = try ShazamIORecognitionEngine().decodeRecognition(
+            Data(response.utf8),
+            attemptID: UUID(),
+            recordedAt: .now,
+            filename: "clip.wav",
+            byteCount: 1_024,
+            processExitCode: 2
+        )
+
+        XCTAssertNil(attempt.song)
+        XCTAssertEqual(attempt.diagnostic.provider, .shazamIO)
+        XCTAssertEqual(attempt.diagnostic.errorDescription, "ShazamIO runner 失敗：no match")
+    }
+
+    func testShazamIOBundledRuntimeSelfCheckUsesNoNetworkRecognition() async throws {
+        let engine = ShazamIORecognitionEngine()
+        guard engine.isAvailable() else {
+            throw XCTSkip("The standalone shazamio-benchmark repository is not installed on this Mac.")
+        }
+
+        switch await engine.selfCheck() {
+        case let .success(check):
+            XCTAssertEqual(check.status, "ok")
+            XCTAssertEqual(check.shazamio, "0.8.1")
+            XCTAssertFalse(check.networkRequestMade)
+        case let .failure(error):
+            XCTFail("Bundled ShazamIO self-check failed: \(error.localizedDescription)")
+        }
     }
 }

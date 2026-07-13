@@ -22,7 +22,5 @@
     <string>1</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>CoffeeSync records short clips only while a coffee session is active to identify nearby music.</string>
-    <key>NSAppleEventsUsageDescription</key>
-    <string>CoffeeSync needs permission to control Music so it can play the identified song at the matching time.</string>
 </dict>
 </plist>
