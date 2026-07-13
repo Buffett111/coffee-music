@@ -106,4 +106,11 @@ final class SyncPlannerTests: XCTestCase {
         XCTAssertEqual(attempt.diagnostic.errorDescription, "請先在設定貼上 AudD API token。")
         XCTAssertNil(attempt.diagnostic.responseExcerpt)
     }
+
+    func testMusicPlayerSnapshotOnlyAllowsSeekForPlayingTrackWithEnoughDuration() {
+        XCTAssertTrue(MusicPlayerSnapshot.parse("playing|220.2").canSeek(to: 21.536))
+        XCTAssertFalse(MusicPlayerSnapshot.parse("paused|220.2").canSeek(to: 21.536))
+        XCTAssertFalse(MusicPlayerSnapshot.parse("playing|20").canSeek(to: 21.536))
+        XCTAssertFalse(MusicPlayerSnapshot.parse("unknown|0").canSeek(to: 21.536))
+    }
 }

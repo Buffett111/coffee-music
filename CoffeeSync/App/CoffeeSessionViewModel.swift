@@ -175,10 +175,15 @@ final class CoffeeSessionViewModel: ObservableObject {
         statusDetail = "Music.app 將從第 \(time(plan.targetOffset)) 接手播放。"
 
         do {
-            try playback.play(song, from: plan.targetOffset)
+            let result = try await playback.play(song, from: plan.targetOffset)
             switchGate.commitAttempt(for: song)
             phase = .playing(song, plan)
-            statusDetail = "已要求 Music.app 同步播放；第一次會請你允許控制 Music。"
+            switch result {
+            case .synchronized:
+                statusDetail = "Music.app 已同步至第 \(time(plan.targetOffset))；第一次會請你允許控制 Music。"
+            case .playingWithoutSynchronization:
+                statusDetail = "Music.app 已開始播放，但對時尚未就緒；維持正常播放。"
+            }
             scheduleNextRecognition(after: 45)
         } catch {
             switchGate.cancelAttempt()

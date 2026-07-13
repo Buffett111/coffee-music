@@ -59,7 +59,9 @@ xcodebuild -project CoffeeSync.xcodeproj -scheme CoffeeSync \
 4. Add elapsed processing time plus the user-calibrated output allowance.
 5. Ask Music.app to play and seek. The app rechecks roughly every 45 seconds,
    avoids restarting a stable match, and deletes the temporary WAV once AudD
-   returns.
+   returns. It waits for Music.app to report a playing, seekable track before
+   seeking; if loading takes too long, it keeps normal playback and reports
+   that synchronization is not ready.
 
 ## Development diagnostics
 
