@@ -1,72 +1,106 @@
-# CoffeeSync for Mac
+# CoffeeSync for macOS
 
-CoffeeSync is a personal macOS utility for the café use case: it records a short
-microphone clip, asks AudD to identify the song playing in the room, searches
-YouTube for a playable match, then starts a visible embedded player at an
-estimated equivalent point in the song. The intent is to enjoy the café's music
-through ANC headphones while reducing speech and coffee-machine noise.
+CoffeeSync is a macOS hobby project that identifies music playing in a café and
+starts a matching, visible YouTube embed near the corresponding point in the
+track. It is intended for personal experiments with headphones: keep the venue's
+music while reducing surrounding conversation and machine noise.
 
-## Why this is a Mac app
+> **Personal, non-commercial project.** CoffeeSync is a holiday-project / hobby
+> experiment. It is not affiliated with Apple, Shazam, Google, YouTube, AudD, or
+> any café or music-rights holder. Do not use this project, its bundled ShazamIO
+> integration, or collected recordings for commercial purposes, public service
+> operation, redistribution as a recognition product, or any activity that
+> violates applicable platform terms, copyright, privacy, or music-licensing
+> requirements. See [Use and ShazamIO disclaimer](#use-and-shazamio-disclaimer).
 
-The archived iPhone implementation relied on ShazamKit and MusicKit App
-Services. Those services require Apple Developer Program access even when the
-app is for personal use. This macOS implementation avoids both frameworks:
+## What it does
 
-- **Recognition:** choose a 5-, 8-, or 10-second WAV capture in the app. ShazamIO
-  is generally most reliable with 10 seconds because its native recognizer is
-  designed around that window.
-- **Playback:** the official YouTube Data API v3 searches for an embeddable
-  video, then the official YouTube IFrame Player API plays it in-app from the
-  detected time.
-- **Credentials:** the AudD token and YouTube Data API key live in the local
-  macOS Keychain, never in source control or an Info.plist.
+- Captures a short ambient WAV clip from the Mac's built-in microphone.
+- Lets a developer choose a **5, 8, or 10 second** capture window.
+- Identifies a track with either **AudD** or the bundled **ShazamIO development
+  baseline**.
+- Includes an A/B comparison mode that sends the *same WAV* to both recognizers.
+- Searches the official YouTube Data API v3 for an embeddable video and plays it
+  in a visible WebKit YouTube IFrame Player.
+- Estimates the playback position from the recognizer's match offset, capture
+  duration, request time, and a developer-adjustable output delay.
+- Stores keys in the macOS Keychain and can retain local diagnostic WAV/JSON
+  pairs while development diagnostics are enabled.
 
-The previous iOS prototype is retained in Git as the `ios-prototype` tag.
+CoffeeSync does **not** control headphone ANC, reproduce a venue's audio feed,
+or guarantee an exact recording/video match.
 
-## Setup and run
+## Architecture
 
-1. Create an AudD account and copy an API token from its dashboard. The AudD
-   documentation describes the request format and its current trial/usage
-   terms: <https://docs.audd.io/>.
-2. Create a Google Cloud project, enable **YouTube Data API v3**, then create
-   an API key. Google documents the required project and API setup:
-   <https://developers.google.com/youtube/v3/getting-started>.
-3. Open `CoffeeSync.xcodeproj` in Xcode and choose the **CoffeeSync** scheme
-   with **My Mac** as the destination.
-4. Run the app. Paste both keys in their corresponding fields and select
-   **儲存至 Keychain** for each.
-5. Click **開始咖啡工作階段** and approve microphone access for CoffeeSync.
-6. For recognition troubleshooting, keep **開發診斷：保留每輪 WAV 與辨識 log**
-   enabled and select **開啟診斷資料夾** after a failed attempt.
-7. Use the Mac's built-in microphone to hear the room and route the Mac's audio
-   to your ANC headphones. Keeping AirPods as output-only avoids the Bluetooth
-   hands-free profile's lower audio quality.
+```text
+Mac built-in microphone
+        |
+        v
+AudioClipRecorder  -- selected 5 / 8 / 10 s WAV --> Recognition provider
+                                                        |       |
+                                                        |       +-- AudD API
+                                                        |
+                                                        +-- Bundled ShazamIO baseline
+        |                                                        |
+        +-------------------- recognised title / artist / offset +
+                                                                 |
+                                                                 v
+             SyncPlanner --> YouTube Data API v3 --> WebKit YouTube IFrame Player
+```
 
-## ShazamIO development baseline
+The selected capture duration is part of the position calculation. For example,
+a ShazamIO offset is advanced by the 10-second capture window (when selected),
+the time spent recognizing/searching, and the configurable extra delay before
+the YouTube player starts.
 
-The `codex/shazamio-dev-baseline` branch adds a **ShazamIO（開發基線）**
-provider and a **雙重比較（同一段 WAV）** mode. This development branch vendors
-a portable Python 3.10 runtime, ShazamIO 0.8.1, and shazamio-core 1.1.2 under
-`CoffeeSync/DevelopmentSupport/ShazamIO`, then copies that folder into the app
-bundle as a resource. It does not require `~/Documents/shazamio-benchmark`.
+## Recognition modes
 
-1. In CoffeeSync, select **ShazamIO（開發基線）**, then choose
-   **驗證內嵌 ShazamIO 基線**. This starts the bundled runner but does not
-   request microphone access, send audio, or contact the recognition service.
-2. For a fair A/B test, select **雙重比較（同一段 WAV）**. CoffeeSync records one
-   clip, passes that exact file to both AudD and ShazamIO, displays the two
-   title/artist outcomes, and writes one diagnostic JSON log per provider.
-   Comparison mode intentionally does not auto-play YouTube, so it needs no
-   YouTube API key.
+| Mode | Requirements | Playback behavior | Intended use |
+| --- | --- | --- | --- |
+| **AudD** | AudD API token + YouTube API key | Searches and plays YouTube | Alternative recognition provider |
+| **ShazamIO development baseline** | Bundled runtime + YouTube API key | Searches and plays YouTube using the returned fingerprint offset | Local accuracy and integration experiments |
+| **Comparison** | AudD API token + bundled runtime | No automatic playback | Fair A/B testing on one identical WAV |
 
-ShazamIO is an unofficial client of an undocumented Shazam endpoint. This
-branch is for private, development-only accuracy comparison and must not be
-treated as a production recognition integration. The ShazamIO fingerprint offset
-is passed to the YouTube seek path when ShazamIO is selected alone; comparison
-mode does not auto-play so it can report a clean A/B result.
+For ShazamIO, **10 seconds** is the recommended starting point: its native
+recognizer is designed around that window. Five and eight seconds are exposed
+for latency/accuracy experiments, not as an accuracy guarantee.
 
-For a command-line build that does not require an Apple Developer Program
-membership:
+## Requirements
+
+- macOS on Apple silicon
+- Xcode (current macOS SDK) for building and running the app
+- Microphone permission
+- A [YouTube Data API v3](https://developers.google.com/youtube/v3/getting-started)
+  API key for all modes that play YouTube
+- An [AudD](https://docs.audd.io/) API token only when using AudD or comparison
+  mode
+
+The ShazamIO baseline is bundled under
+`CoffeeSync/DevelopmentSupport/ShazamIO`; it does not require a separate Python
+installation or an external benchmark repository.
+
+## Quick start
+
+1. Clone the repository and open `CoffeeSync.xcodeproj` in Xcode.
+2. Select the **CoffeeSync** scheme and **My Mac** destination.
+3. Run the app and approve microphone access.
+4. Create a Google Cloud project, enable **YouTube Data API v3**, and create an
+   API key. Paste it into CoffeeSync and choose **Save to Keychain**.
+5. Choose a recognition mode:
+   - For **ShazamIO development baseline**, no recognition key is required.
+   - For **AudD** or **Comparison**, add and save an AudD API token as well.
+6. Select a capture duration. Start with **10 seconds** for ShazamIO.
+7. Start a session. Use the Mac's built-in microphone for room audio; route Mac
+   output to headphones if desired.
+
+Before recording, use **Test bundled ShazamIO baseline** to confirm that the
+embedded Python runtime can start. It performs no microphone capture and sends
+no recognition request. Use **Test YouTube playback** to check only the YouTube
+search/player path.
+
+## Build and test from the command line
+
+The project can be built locally without Apple Developer Program membership:
 
 ```sh
 xcodebuild -project CoffeeSync.xcodeproj -scheme CoffeeSync \
@@ -75,45 +109,82 @@ xcodebuild -project CoffeeSync.xcodeproj -scheme CoffeeSync \
   build CODE_SIGNING_ALLOWED=NO
 ```
 
-## How a session works
+Run the unit tests with:
 
-1. Record the selected 5-, 8-, or 10-second ambient-audio window.
-2. Send the temporary WAV to the selected recognition provider.
-3. Read the title, artist, and (when supplied by AudD) match timecode.
-4. Add the selected capture baseline (five, eight, or ten seconds), elapsed processing
-   time, and up to 15 seconds of user-calibrated extra output allowance.
-5. Search YouTube's official Data API for an embeddable video using the title,
-   artist, and `official audio` query, then rank the returned candidates.
-6. Load the selected video in a visible IFrame Player and ask it to start from
-   the estimated offset. The app rechecks roughly every 45 seconds and avoids
-   restarting a stable match.
+```sh
+xcodebuild -project CoffeeSync.xcodeproj -scheme CoffeeSync \
+  -configuration Debug \
+  -derivedDataPath /private/tmp/CoffeeSyncDerivedData-macOS \
+  test CODE_SIGNING_ALLOWED=NO
+```
 
-## Development diagnostics
+## Diagnostics and privacy
 
-The diagnostic toggle is enabled by default during development. It retains the
-most recent 25 attempts in:
+Development diagnostics are enabled by default. When enabled, CoffeeSync retains
+the latest 25 WAV clips and matching JSON records at:
 
-`~/Library/Application Support/CoffeeSync/Recognition Diagnostics/`
+```text
+~/Library/Application Support/CoffeeSync/Recognition Diagnostics/
+```
 
-Each attempt has a `.wav` recording and a matching `.json` log. The log includes
-the provider, clip size, service status, a truncated response, and any app-side
-error; it deliberately never includes the API token. These files contain ambient
-room audio, so do not upload or share them casually.
+Each JSON record includes provider status, clip size, a truncated service
+response, and app-side errors. API tokens are deliberately excluded. WAV files
+can contain voices and other personal data from a shared space: keep them local,
+review them before sharing, and turn diagnostics off when they are no longer
+needed.
 
-## Limits and privacy
+Recognition necessarily sends the selected clip to the active provider:
 
-- AudD is an external recognition service: every active recognition cycle
-  uploads a short audio clip. Development diagnostics retain the most recent
-  25 new clips locally while the toggle is on; regular temporary files are
-  deleted after each request.
-- This app does not control an earphone's ANC mode; enable ANC on your own
-  headphones.
-- Song matching and offset alignment remain approximate. Remixes, live
-  versions, heavy room noise, delayed player startup, and YouTube search
-  rankings can drift or choose an unintended version. The selected video title
-  and channel are shown before playback for verification.
-- YouTube Music does not expose a separate public catalog API for this use
-  case. CoffeeSync uses the supported YouTube Data API and visible IFrame
-  Player instead; it does not use unofficial cookie-based or reverse-engineered
-  YouTube Music APIs. The app can build and run for your own Mac without App
-  Store distribution or Apple Developer Program enrollment.
+- **AudD mode:** sends the clip to AudD.
+- **ShazamIO mode:** sends the clip through ShazamIO's endpoint
+  integration.
+- **Comparison mode:** sends that same clip to both providers.
+
+Do not record people without an appropriate legal basis or use the app where
+recording is prohibited.
+
+## Limitations
+
+- Recognition quality depends on room noise, volume, recording route, track
+  version, and the selected capture length.
+- A recognizer result and a YouTube result may refer to different versions of a
+  song (for example, a live version, remix, cover, or upload with an inaccurate
+  title).
+- Position alignment is an estimate. Network latency, YouTube startup time, and
+  player buffering can create drift; CoffeeSync exposes an additional 0–15
+  second delay for calibration.
+- YouTube availability, embeddability, API quotas, and regional restrictions are
+  controlled by YouTube and may change.
+- This project uses standard YouTube video search and the visible IFrame Player;
+  it does not use unofficial YouTube Music APIs or automate a YouTube Music
+  subscription.
+
+## Use and ShazamIO disclaimer
+
+The ShazamIO integration exists only as a **local development baseline** for
+recognition-quality comparison. ShazamIO is an unofficial client that communicates
+with an Shazam endpoint; it is not an Apple, Shazam, or MusicKit
+API. Its availability, behavior, and permission to use may change without
+notice. Do not represent CoffeeSync as Shazam-compatible, endorsed, certified,
+or production-ready.
+
+This repository is provided for personal learning and private experimentation
+only. No permission is granted for commercial use. Developers are responsible
+for obtaining any necessary permission from API providers and rights holders and
+for complying with applicable laws, terms of service, privacy obligations, and
+licenses. In particular, the included third-party components retain their own
+licenses and notices; see
+[`CoffeeSync/DevelopmentSupport/ShazamIO/THIRD_PARTY_NOTICES.md`](CoffeeSync/DevelopmentSupport/ShazamIO/THIRD_PARTY_NOTICES.md).
+
+## Project layout
+
+```text
+CoffeeSync/
+├── App/                    SwiftUI interface and session orchestration
+├── Core/                   Recognition models and synchronization planner
+├── Services/               Audio capture, recognition, diagnostics, Keychain, YouTube
+├── DevelopmentSupport/
+│   └── ShazamIO/           Bundled development-only Python/ShazamIO runtime
+└── Resources/              App configuration
+CoffeeSyncTests/            Unit tests
+```
