@@ -26,7 +26,7 @@ final class CoffeeSessionViewModel: ObservableObject {
     private let audDRecognizer = AudDRecognitionEngine()
     private let shazamIORecognizer = ShazamIORecognitionEngine()
     private let playback = YouTubePlaybackEngine()
-    private let planner = SyncPlanner(startupAllowance: 0.55, captureDuration: 5)
+    private let planner = SyncPlanner(startupAllowance: 0.55)
     private var switchGate = TrackSwitchGate(minimumSwitchInterval: 15)
     private var nextCycle: Task<Void, Never>?
     private var sessionIsActive = false
@@ -204,9 +204,10 @@ final class CoffeeSessionViewModel: ObservableObject {
     private func startRecognitionCycle() {
         guard sessionIsActive else { return }
         do {
+            let duration = recognitionCaptureDuration
             phase = .recording
-            statusDetail = "正在擷取 5 秒環境音，使用 Mac 內建麥克風效果最佳。"
-            try recorder.record(duration: 5)
+            let input = try recorder.record(duration: duration)
+            statusDetail = "正在用 \(input) 擷取 \(Int(duration)) 秒環境音。"
         } catch {
             sessionIsActive = false
             phase = .failed(error.localizedDescription)
@@ -329,7 +330,10 @@ final class CoffeeSessionViewModel: ObservableObject {
             return
         }
 
-        let plan = planner.plan(for: song, outputLatency: latencyAdjustment)
+        let plan = SyncPlanner(
+            startupAllowance: planner.startupAllowance,
+            captureDuration: recognitionCaptureDuration
+        ).plan(for: song, outputLatency: latencyAdjustment)
         currentPlan = plan
         phase = .switching(song)
         statusDetail = "正在 YouTube 尋找 \(song.displayName)。"
@@ -359,6 +363,10 @@ final class CoffeeSessionViewModel: ObservableObject {
             guard !Task.isCancelled else { return }
             self?.startRecognitionCycle()
         }
+    }
+
+    private var recognitionCaptureDuration: TimeInterval {
+        recognitionProvider.requiresShazamIO ? 10 : 5
     }
 
     private func requestMicrophoneAccess() async -> Bool {

@@ -8,7 +8,10 @@ import asyncio
 import json
 import sys
 import time
+import warnings
 from pathlib import Path
+
+warnings.filterwarnings("ignore", message="Couldn't find ffmpeg or avconv.*")
 
 from shazamio import Shazam
 

@@ -1,12 +1,15 @@
+import AudioToolbox
 import AVFoundation
 import Foundation
 
 enum AudioClipRecorderError: LocalizedError {
     case inputUnavailable
+    case inputSelectionFailed(OSStatus)
 
     var errorDescription: String? {
         switch self {
         case .inputUnavailable: "找不到可用的麥克風輸入。"
+        case let .inputSelectionFailed(status): "無法選取 MacBook 內建麥克風（Core Audio \(status)）。"
         }
     }
 }
@@ -25,6 +28,7 @@ final class AudioClipRecorder {
     private var routeRestartIsPending = false
     private var configurationObserver: NSObjectProtocol?
     private(set) var isRecording = false
+    private(set) var currentInputDescription = "系統預設麥克風"
 
     init() {
         configurationObserver = NotificationCenter.default.addObserver(
@@ -42,10 +46,12 @@ final class AudioClipRecorder {
         }
     }
 
-    func record(duration: TimeInterval = 5) throws {
-        guard !isRecording else { return }
+    @discardableResult
+    func record(duration: TimeInterval = 5) throws -> String {
+        guard !isRecording else { return currentInputDescription }
         let input = audioEngine.inputNode
         audioEngine.reset()
+        currentInputDescription = try selectBuiltInMicrophone(for: input)
         // `outputFormat` can retain a client format from the previous audio route
         // (for example 48 kHz before AirPods switch the input to 24 kHz). The input
         // format is the current hardware format and is safe for the WAV file.
@@ -81,6 +87,7 @@ final class AudioClipRecorder {
         let work = DispatchWorkItem { [weak self] in self?.finishRecording() }
         pendingFinish = work
         DispatchQueue.main.asyncAfter(deadline: .now() + duration, execute: work)
+        return currentInputDescription
     }
 
     func cancel() {
@@ -124,5 +131,133 @@ final class AudioClipRecorder {
                 self.onRecordingError?(error)
             }
         }
+    }
+
+    /// AVAudioEngine otherwise follows the system-default input, which can switch
+    /// to an AirPods microphone while the user only intended to change playback.
+    /// Prefer the Mac's built-in input for café recognition; desktop Macs without
+    /// one retain their current system input as a safe fallback.
+    private func selectBuiltInMicrophone(for input: AVAudioInputNode) throws -> String {
+        guard let deviceID = builtInInputDeviceID() else {
+            return systemInputDeviceName() ?? "系統預設麥克風"
+        }
+        guard let audioUnit = input.audioUnit else {
+            throw AudioClipRecorderError.inputUnavailable
+        }
+
+        var selectedDeviceID = deviceID
+        let status = AudioUnitSetProperty(
+            audioUnit,
+            kAudioOutputUnitProperty_CurrentDevice,
+            kAudioUnitScope_Global,
+            0,
+            &selectedDeviceID,
+            UInt32(MemoryLayout<AudioDeviceID>.size)
+        )
+        guard status == noErr else { throw AudioClipRecorderError.inputSelectionFailed(status) }
+        return deviceName(for: deviceID) ?? "MacBook 內建麥克風"
+    }
+
+    private func builtInInputDeviceID() -> AudioDeviceID? {
+        allAudioDevices().first { deviceID in
+            hasInputStreams(deviceID) && transportType(for: deviceID) == kAudioDeviceTransportTypeBuiltIn
+        }
+    }
+
+    private func allAudioDevices() -> [AudioDeviceID] {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDevices,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var byteCount: UInt32 = 0
+        guard AudioObjectGetPropertyDataSize(
+            AudioObjectID(kAudioObjectSystemObject),
+            &address,
+            0,
+            nil,
+            &byteCount
+        ) == noErr else { return [] }
+
+        var devices = [AudioDeviceID](repeating: 0, count: Int(byteCount) / MemoryLayout<AudioDeviceID>.size)
+        let status = devices.withUnsafeMutableBytes { buffer in
+            AudioObjectGetPropertyData(
+                AudioObjectID(kAudioObjectSystemObject),
+                &address,
+                0,
+                nil,
+                &byteCount,
+                buffer.baseAddress!
+            )
+        }
+        return status == noErr ? devices : []
+    }
+
+    private func hasInputStreams(_ deviceID: AudioDeviceID) -> Bool {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyStreamConfiguration,
+            mScope: kAudioDevicePropertyScopeInput,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var byteCount: UInt32 = 0
+        guard AudioObjectGetPropertyDataSize(deviceID, &address, 0, nil, &byteCount) == noErr,
+              byteCount >= MemoryLayout<AudioBufferList>.size else { return false }
+
+        let storage = UnsafeMutableRawPointer.allocate(
+            byteCount: Int(byteCount),
+            alignment: MemoryLayout<AudioBufferList>.alignment
+        )
+        defer { storage.deallocate() }
+        guard AudioObjectGetPropertyData(deviceID, &address, 0, nil, &byteCount, storage) == noErr else {
+            return false
+        }
+        return storage.assumingMemoryBound(to: AudioBufferList.self).pointee.mNumberBuffers > 0
+    }
+
+    private func transportType(for deviceID: AudioDeviceID) -> UInt32? {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyTransportType,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var value: UInt32 = 0
+        var byteCount = UInt32(MemoryLayout<UInt32>.size)
+        guard AudioObjectGetPropertyData(deviceID, &address, 0, nil, &byteCount, &value) == noErr else {
+            return nil
+        }
+        return value
+    }
+
+    private func deviceName(for deviceID: AudioDeviceID) -> String? {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioObjectPropertyName,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var value: Unmanaged<CFString>?
+        var byteCount = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
+        guard AudioObjectGetPropertyData(deviceID, &address, 0, nil, &byteCount, &value) == noErr else {
+            return nil
+        }
+        return value?.takeUnretainedValue() as String?
+    }
+
+    private func systemInputDeviceName() -> String? {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultInputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var deviceID: AudioDeviceID = 0
+        var byteCount = UInt32(MemoryLayout<AudioDeviceID>.size)
+        guard AudioObjectGetPropertyData(
+            AudioObjectID(kAudioObjectSystemObject),
+            &address,
+            0,
+            nil,
+            &byteCount,
+            &deviceID
+        ) == noErr else { return nil }
+        return deviceName(for: deviceID)
     }
 }

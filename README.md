@@ -12,8 +12,8 @@ The archived iPhone implementation relied on ShazamKit and MusicKit App
 Services. Those services require Apple Developer Program access even when the
 app is for personal use. This macOS implementation avoids both frameworks:
 
-- **Recognition:** AudD's documented REST API, using a fresh 5-second WAV
-  clip from the Mac microphone.
+- **Recognition:** AudD uses a fresh 5-second WAV; the bundled ShazamIO baseline
+  uses 10 seconds because its native recognizer is designed around that window.
 - **Playback:** the official YouTube Data API v3 searches for an embeddable
   video, then the official YouTube IFrame Player API plays it in-app from the
   detected time.
@@ -76,11 +76,11 @@ xcodebuild -project CoffeeSync.xcodeproj -scheme CoffeeSync \
 
 ## How a session works
 
-1. Record five seconds of ambient audio.
+1. Record five seconds for AudD, or ten seconds for ShazamIO / comparison mode.
 2. Send the temporary WAV to the selected recognition provider.
 3. Read the title, artist, and (when supplied by AudD) match timecode.
-4. Add the fixed five-second capture baseline, elapsed processing time, and up
-   to 15 seconds of user-calibrated extra output allowance.
+4. Add the actual capture baseline (five or ten seconds), elapsed processing
+   time, and up to 15 seconds of user-calibrated extra output allowance.
 5. Search YouTube's official Data API for an embeddable video using the title,
    artist, and `official audio` query, then rank the returned candidates.
 6. Load the selected video in a visible IFrame Player and ask it to start from
