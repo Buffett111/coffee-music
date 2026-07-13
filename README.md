@@ -136,7 +136,7 @@ needed.
 Recognition necessarily sends the selected clip to the active provider:
 
 - **AudD mode:** sends the clip to AudD.
-- **ShazamIO mode:** sends the clip through ShazamIO's undocumented endpoint
+- **ShazamIO mode:** sends the clip through ShazamIO's endpoint
   integration.
 - **Comparison mode:** sends that same clip to both providers.
 
@@ -163,7 +163,7 @@ recording is prohibited.
 
 The ShazamIO integration exists only as a **local development baseline** for
 recognition-quality comparison. ShazamIO is an unofficial client that communicates
-with an undocumented Shazam endpoint; it is not an Apple, Shazam, or MusicKit
+with an Shazam endpoint; it is not an Apple, Shazam, or MusicKit
 API. Its availability, behavior, and permission to use may change without
 notice. Do not represent CoffeeSync as Shazam-compatible, endorsed, certified,
 or production-ready.
