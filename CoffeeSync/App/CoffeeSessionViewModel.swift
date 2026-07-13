@@ -40,6 +40,14 @@ final class CoffeeSessionViewModel: ObservableObject {
                 await self?.recognize(url)
             }
         }
+        recorder.onRecordingError = { [weak self] error in
+            Task { @MainActor in
+                guard let self else { return }
+                self.sessionIsActive = false
+                self.phase = .failed(error.localizedDescription)
+                self.statusDetail = "耳機或音訊裝置切換後無法重新啟動錄音：\(error.localizedDescription)"
+            }
+        }
     }
 
     var isActive: Bool { sessionIsActive }
