@@ -1,0 +1,216 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000001 /* CoffeeSyncApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* CoffeeSyncApp.swift */; };
+		A10000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* ContentView.swift */; };
+		A10000000000000000000003 /* CoffeeSessionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* CoffeeSessionViewModel.swift */; };
+		A10000000000000000000004 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* Models.swift */; };
+		A10000000000000000000005 /* SyncPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* SyncPlanner.swift */; };
+		A10000000000000000000006 /* AudioRouteMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* AudioRouteMonitor.swift */; };
+		A10000000000000000000007 /* ShazamRecognitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* ShazamRecognitionEngine.swift */; };
+		A10000000000000000000008 /* AppleMusicPlaybackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* AppleMusicPlaybackEngine.swift */; };
+		A10000000000000000000009 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B /* AVFoundation.framework */; };
+		A1000000000000000000000A /* MusicKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000C /* MusicKit.framework */; };
+		A1000000000000000000000B /* ShazamKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000D /* ShazamKit.framework */; };
+		A1000000000000000000000C /* SyncPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* SyncPlannerTests.swift */; };
+		A1000000000000000000000D /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000E /* XCTest.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A30000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A40000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A50000000000000000000001;
+			remoteInfo = CoffeeSync;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		A20000000000000000000001 /* CoffeeSyncApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoffeeSyncApp.swift; sourceTree = "<group>"; };
+		A20000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A20000000000000000000003 /* CoffeeSessionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoffeeSessionViewModel.swift; sourceTree = "<group>"; };
+		A20000000000000000000004 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		A20000000000000000000005 /* SyncPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncPlanner.swift; sourceTree = "<group>"; };
+		A20000000000000000000006 /* AudioRouteMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRouteMonitor.swift; sourceTree = "<group>"; };
+		A20000000000000000000007 /* ShazamRecognitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShazamRecognitionEngine.swift; sourceTree = "<group>"; };
+		A20000000000000000000008 /* AppleMusicPlaybackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleMusicPlaybackEngine.swift; sourceTree = "<group>"; };
+		A20000000000000000000009 /* SyncPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncPlannerTests.swift; sourceTree = "<group>"; };
+		A2000000000000000000000A /* CoffeeSync.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CoffeeSync.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A2000000000000000000000B /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		A2000000000000000000000C /* MusicKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MusicKit.framework; path = System/Library/Frameworks/MusicKit.framework; sourceTree = SDKROOT; };
+		A2000000000000000000000D /* ShazamKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ShazamKit.framework; path = System/Library/Frameworks/ShazamKit.framework; sourceTree = SDKROOT; };
+		A2000000000000000000000E /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
+		A2000000000000000000000F /* CoffeeSyncTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CoffeeSyncTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000010 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A60000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000009 /* AVFoundation.framework in Frameworks */,
+				A1000000000000000000000A /* MusicKit.framework in Frameworks */,
+				A1000000000000000000000B /* ShazamKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A60000000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000000000000000000000D /* XCTest.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A70000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				A70000000000000000000002 /* CoffeeSync */,
+				A70000000000000000000006 /* CoffeeSyncTests */,
+				A70000000000000000000007 /* Frameworks */,
+				A70000000000000000000008 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A70000000000000000000002 /* CoffeeSync */ = {
+			isa = PBXGroup;
+			children = (
+				A70000000000000000000003 /* App */,
+				A70000000000000000000004 /* Core */,
+				A70000000000000000000005 /* Services */,
+				A70000000000000000000009 /* Resources */,
+			);
+			path = CoffeeSync;
+			sourceTree = "<group>";
+		};
+		A70000000000000000000003 /* App */ = {
+			isa = PBXGroup;
+			children = (A20000000000000000000001 /* CoffeeSyncApp.swift */, A20000000000000000000002 /* ContentView.swift */, A20000000000000000000003 /* CoffeeSessionViewModel.swift */);
+			path = App;
+			sourceTree = "<group>";
+		};
+		A70000000000000000000004 /* Core */ = {
+			isa = PBXGroup;
+			children = (A20000000000000000000004 /* Models.swift */, A20000000000000000000005 /* SyncPlanner.swift */);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		A70000000000000000000005 /* Services */ = {
+			isa = PBXGroup;
+			children = (A20000000000000000000006 /* AudioRouteMonitor.swift */, A20000000000000000000007 /* ShazamRecognitionEngine.swift */, A20000000000000000000008 /* AppleMusicPlaybackEngine.swift */);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A70000000000000000000006 /* CoffeeSyncTests */ = {
+			isa = PBXGroup;
+			children = (A20000000000000000000009 /* SyncPlannerTests.swift */);
+			path = CoffeeSyncTests;
+			sourceTree = "<group>";
+		};
+		A70000000000000000000007 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (A2000000000000000000000B /* AVFoundation.framework */, A2000000000000000000000C /* MusicKit.framework */, A2000000000000000000000D /* ShazamKit.framework */, A2000000000000000000000E /* XCTest.framework */);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		A70000000000000000000008 /* Products */ = {
+			isa = PBXGroup;
+			children = (A2000000000000000000000A /* CoffeeSync.app */, A2000000000000000000000F /* CoffeeSyncTests.xctest */);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A70000000000000000000009 /* Resources */ = {
+			isa = PBXGroup;
+			children = (A20000000000000000000010 /* Info.plist */);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A50000000000000000000001 /* CoffeeSync */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A80000000000000000000001 /* Build configuration list for PBXNativeTarget "CoffeeSync" */;
+			buildPhases = (A90000000000000000000001 /* Sources */, A60000000000000000000001 /* Frameworks */, AA00000000000000000000001 /* Resources */);
+			buildRules = ();
+			dependencies = ();
+			name = CoffeeSync;
+			productName = CoffeeSync;
+			productReference = A2000000000000000000000A /* CoffeeSync.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A50000000000000000000002 /* CoffeeSyncTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A80000000000000000000002 /* Build configuration list for PBXNativeTarget "CoffeeSyncTests" */;
+			buildPhases = (A90000000000000000000002 /* Sources */, A60000000000000000000002 /* Frameworks */);
+			buildRules = ();
+			dependencies = (AB00000000000000000000001 /* PBXTargetDependency */);
+			name = CoffeeSyncTests;
+			productName = CoffeeSyncTests;
+			productReference = A2000000000000000000000F /* CoffeeSyncTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A40000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = { LastSwiftUpdateCheck = 1600; LastUpgradeCheck = 1600; TargetAttributes = { A50000000000000000000001 = { CreatedOnToolsVersion = 16.0; }; A50000000000000000000002 = { CreatedOnToolsVersion = 16.0; TestTargetID = A50000000000000000000001; }; }; };
+			buildConfigurationList = A80000000000000000000003 /* Build configuration list for PBXProject "CoffeeSync" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (en, Base);
+			mainGroup = A70000000000000000000001;
+			productRefGroup = A70000000000000000000008 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (A50000000000000000000001 /* CoffeeSync */, A50000000000000000000002 /* CoffeeSyncTests */);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AA00000000000000000000001 /* Resources */ = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A90000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (A10000000000000000000001 /* CoffeeSyncApp.swift in Sources */, A10000000000000000000002 /* ContentView.swift in Sources */, A10000000000000000000003 /* CoffeeSessionViewModel.swift in Sources */, A10000000000000000000004 /* Models.swift in Sources */, A10000000000000000000005 /* SyncPlanner.swift in Sources */, A10000000000000000000006 /* AudioRouteMonitor.swift in Sources */, A10000000000000000000007 /* ShazamRecognitionEngine.swift in Sources */, A10000000000000000000008 /* AppleMusicPlaybackEngine.swift in Sources */);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A90000000000000000000002 /* Sources */ = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A1000000000000000000000C /* SyncPlannerTests.swift in Sources */); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AB00000000000000000000001 /* PBXTargetDependency */ = { isa = PBXTargetDependency; target = A50000000000000000000001 /* CoffeeSync */; targetProxy = A30000000000000000000001 /* PBXContainerItemProxy */; };
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		AC00000000000000000000001 /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES; COPY_PHASE_STRIP = NO; DEBUG_INFORMATION_FORMAT = dwarf; ENABLE_TESTABILITY = YES; GCC_C_LANGUAGE_STANDARD = gnu17; GCC_NO_COMMON_BLOCKS = YES; SWIFT_VERSION = 5.0; }; name = Debug; };
+		AC00000000000000000000002 /* Release */ = { isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; COPY_PHASE_STRIP = YES; DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"; GCC_C_LANGUAGE_STANDARD = gnu17; GCC_NO_COMMON_BLOCKS = YES; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_VERSION = 5.0; }; name = Release; };
+		AC00000000000000000000003 /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { ASSETCATALOG_COMPILER_APPICON_NAME = ""; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; DEVELOPMENT_TEAM = ""; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = CoffeeSync/Resources/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.example.CoffeeSync; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; SWIFT_EMIT_LOC_STRINGS = YES; TARGETED_DEVICE_FAMILY = 1; }; name = Debug; };
+		AC00000000000000000000004 /* Release */ = { isa = XCBuildConfiguration; buildSettings = { ASSETCATALOG_COMPILER_APPICON_NAME = ""; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; DEVELOPMENT_TEAM = ""; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = CoffeeSync/Resources/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.example.CoffeeSync; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; SWIFT_EMIT_LOC_STRINGS = YES; TARGETED_DEVICE_FAMILY = 1; }; name = Release; };
+		AC00000000000000000000005 /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.example.CoffeeSyncTests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 1; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CoffeeSync.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CoffeeSync"; }; name = Debug; };
+		AC00000000000000000000006 /* Release */ = { isa = XCBuildConfiguration; buildSettings = { BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.example.CoffeeSyncTests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 1; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CoffeeSync.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CoffeeSync"; }; name = Release; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A80000000000000000000001 /* Build configuration list for PBXNativeTarget "CoffeeSync" */ = { isa = XCConfigurationList; buildConfigurations = (AC00000000000000000000003 /* Debug */, AC00000000000000000000004 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A80000000000000000000002 /* Build configuration list for PBXNativeTarget "CoffeeSyncTests" */ = { isa = XCConfigurationList; buildConfigurations = (AC00000000000000000000005 /* Debug */, AC00000000000000000000006 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A80000000000000000000003 /* Build configuration list for PBXProject "CoffeeSync" */ = { isa = XCConfigurationList; buildConfigurations = (AC00000000000000000000001 /* Debug */, AC00000000000000000000002 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+	};
+	rootObject = A40000000000000000000001 /* Project object */;
+}
