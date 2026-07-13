@@ -1,3 +1,4 @@
+import AppKit
 import AVFoundation
 import Combine
 import Foundation
@@ -12,6 +13,8 @@ final class CoffeeSessionViewModel: ObservableObject {
     @Published var automaticSwitching = true
     @Published var latencyAdjustment: TimeInterval = 0.70
     @Published var audDToken: String
+    @Published var preserveDiagnosticAudio = true
+    @Published private(set) var latestDiagnosticLog: URL?
 
     private let recorder = AudioClipRecorder()
     private let recognizer = AudDRecognitionEngine()
@@ -107,13 +110,47 @@ final class CoffeeSessionViewModel: ObservableObject {
         phase = .recognizing
         statusDetail = "正在將短音訊片段送到 AudD 辨識。"
 
+        let attemptID = UUID()
+        let preservedAudioURL: URL?
+        if preserveDiagnosticAudio {
+            do {
+                preservedAudioURL = try RecognitionDiagnosticsStore.preserveAudioClip(at: url, attemptID: attemptID)
+            } catch {
+                preservedAudioURL = nil
+                statusDetail = "錄音已送 AudD，但無法保留診斷 WAV：\(error.localizedDescription)"
+            }
+        } else {
+            preservedAudioURL = nil
+        }
+
+        let attempt = await recognizer.recognize(fileAt: url, token: audDToken, attemptID: attemptID)
         do {
-            let song = try await recognizer.recognize(fileAt: url, token: audDToken)
-            await handleRecognition(song)
+            latestDiagnosticLog = try RecognitionDiagnosticsStore.writeLog(
+                diagnostic: attempt.diagnostic,
+                preservedAudioURL: preservedAudioURL,
+                song: attempt.song
+            )
         } catch {
-            phase = .unavailable(error.localizedDescription)
-            statusDetail = error.localizedDescription
+            latestDiagnosticLog = nil
+            statusDetail = "AudD 已回覆，但無法寫入診斷 log：\(error.localizedDescription)"
+        }
+
+        if let song = attempt.song {
+            await handleRecognition(song)
+        } else {
+            let reason = attempt.failureDescription ?? "AudD 未提供辨識結果。"
+            phase = .unavailable(reason)
+            statusDetail = latestDiagnosticLog == nil ? reason : "\(reason) 已儲存診斷 log。"
             scheduleNextRecognition(after: 18)
+        }
+    }
+
+    func openDiagnosticsFolder() {
+        do {
+            let directory = try RecognitionDiagnosticsStore.diagnosticsDirectory()
+            NSWorkspace.shared.activateFileViewerSelecting([directory])
+        } catch {
+            statusDetail = "無法開啟診斷資料夾：\(error.localizedDescription)"
         }
     }
 

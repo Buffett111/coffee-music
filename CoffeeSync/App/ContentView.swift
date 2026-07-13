@@ -26,7 +26,7 @@ struct ContentView: View {
                 .padding(28)
             }
         }
-        .frame(minWidth: 640, minHeight: 670)
+        .frame(minWidth: 640, minHeight: 760)
         .tint(.orange)
     }
 
@@ -130,11 +130,24 @@ struct ContentView: View {
                 }
                 Slider(value: $model.latencyAdjustment, in: 0...2, step: 0.05)
             }
+            Divider().overlay(.white.opacity(0.18)).padding(.vertical, 6)
+            Toggle("開發診斷：保留每輪 WAV 與辨識 log", isOn: $model.preserveDiagnosticAudio)
+                .foregroundStyle(.white)
+            HStack {
+                Button("開啟診斷資料夾", action: model.openDiagnosticsFolder)
+                    .buttonStyle(.bordered)
+                if let log = model.latestDiagnosticLog {
+                    Text("最近 log：\(log.lastPathComponent)")
+                        .font(.footnote)
+                        .lineLimit(1)
+                        .foregroundStyle(.white.opacity(0.62))
+                }
+            }
         }
     }
 
     private var privacyNote: some View {
-        Label("每輪只錄製 10 秒並上傳 AudD 辨識；完成後會立即刪除暫存檔。請用 Mac 內建麥克風收音、AirPods 僅作輸出，避免降低藍牙音質。", systemImage: "lock.fill")
+        Label("開發診斷啟用時，每輪 10 秒 WAV 與 AudD 回應摘要會保存在本機；可隨時關閉。請勿分享含有店內談話的錄音。", systemImage: "lock.fill")
             .font(.footnote)
             .foregroundStyle(.white.opacity(0.62))
     }

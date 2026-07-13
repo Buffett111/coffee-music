@@ -34,7 +34,9 @@ The previous iOS prototype is retained in Git as the `ios-prototype` tag.
 4. Click **開始咖啡工作階段** and approve:
    - Microphone access for CoffeeSync.
    - Automation access when macOS asks whether CoffeeSync may control Music.
-5. Use the Mac's built-in microphone to hear the room and route Music.app to
+5. For recognition troubleshooting, keep **開發診斷：保留每輪 WAV 與辨識 log**
+   enabled and select **開啟診斷資料夾** after a failed attempt.
+6. Use the Mac's built-in microphone to hear the room and route Music.app to
    your ANC headphones. Keeping AirPods as output-only avoids the Bluetooth
    hands-free profile's lower audio quality.
 
@@ -56,14 +58,27 @@ xcodebuild -project CoffeeSync.xcodeproj -scheme CoffeeSync \
    AudD.
 4. Add elapsed processing time plus the user-calibrated output allowance.
 5. Ask Music.app to play and seek. The app rechecks roughly every 45 seconds,
-   avoids restarting a stable match, and deletes every temporary WAV clip once
-   AudD returns.
+   avoids restarting a stable match, and deletes the temporary WAV once AudD
+   returns.
+
+## Development diagnostics
+
+The diagnostic toggle is enabled by default during development. It retains the
+most recent 25 attempts in:
+
+`~/Library/Application Support/CoffeeSync/Recognition Diagnostics/`
+
+Each attempt has a `.wav` recording and a matching `.json` log. The log includes
+the clip size, HTTP status, AudD service status, a truncated AudD response,
+and any app-side error; it deliberately never includes the API token. These
+files contain ambient room audio, so do not upload or share them casually.
 
 ## Limits and privacy
 
 - AudD is an external recognition service: every active recognition cycle
-  uploads a short audio clip. CoffeeSync does not retain clips after the
-  request finishes.
+  uploads a short audio clip. Development diagnostics retain the most recent
+  25 new clips locally while the toggle is on; regular temporary files are
+  deleted after each request.
 - This app does not control an earphone's ANC mode; enable ANC on your own
   headphones.
 - Song matching and offset alignment remain approximate. Remixes, live

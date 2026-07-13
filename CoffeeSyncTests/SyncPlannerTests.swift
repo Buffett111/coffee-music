@@ -91,4 +91,19 @@ final class SyncPlannerTests: XCTestCase {
         XCTAssertEqual(song.matchOffset, 56, accuracy: 0.000_1)
         XCTAssertEqual(song.musicURL?.host, "music.apple.com")
     }
+
+    func testAudDAttemptRecordsMissingTokenWithoutReadingAudio() async {
+        let attemptID = UUID()
+        let attempt = await AudDRecognitionEngine().recognize(
+            fileAt: URL(fileURLWithPath: "/tmp/does-not-exist.wav"),
+            token: " ",
+            attemptID: attemptID
+        )
+
+        XCTAssertNil(attempt.song)
+        XCTAssertEqual(attempt.diagnostic.attemptID, attemptID)
+        XCTAssertEqual(attempt.diagnostic.sourceFilename, "does-not-exist.wav")
+        XCTAssertEqual(attempt.diagnostic.errorDescription, "請先在設定貼上 AudD API token。")
+        XCTAssertNil(attempt.diagnostic.responseExcerpt)
+    }
 }

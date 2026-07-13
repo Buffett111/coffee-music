@@ -20,15 +20,59 @@ enum AudDError: LocalizedError {
     }
 }
 
+struct AudDRecognitionDiagnostic: Codable, Sendable {
+    let attemptID: UUID
+    let recordedAt: Date
+    let sourceFilename: String
+    let audioByteCount: Int?
+    let httpStatusCode: Int?
+    let serviceStatus: String?
+    let errorDescription: String?
+    let responseExcerpt: String?
+}
+
+struct AudDRecognitionAttempt: Sendable {
+    let song: RecognizedSong?
+    let diagnostic: AudDRecognitionDiagnostic
+
+    var failureDescription: String? { diagnostic.errorDescription }
+}
+
 /// Recognizes a short microphone recording with AudD's music-recognition API.
 final class AudDRecognitionEngine {
     private let endpoint = URL(string: "https://api.audd.io/")!
 
-    func recognize(fileAt fileURL: URL, token: String) async throws -> RecognizedSong {
+    func recognize(
+        fileAt fileURL: URL,
+        token: String,
+        attemptID: UUID = UUID()
+    ) async -> AudDRecognitionAttempt {
+        let recordedAt = Date()
+        let filename = fileURL.lastPathComponent
+        let byteCount = (try? fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? nil
         let token = token.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !token.isEmpty else { throw AudDError.missingToken }
+        guard !token.isEmpty else {
+            return failedAttempt(
+                attemptID: attemptID,
+                recordedAt: recordedAt,
+                filename: filename,
+                byteCount: byteCount,
+                error: AudDError.missingToken
+            )
+        }
 
-        let audio = try Data(contentsOf: fileURL)
+        let audio: Data
+        do {
+            audio = try Data(contentsOf: fileURL)
+        } catch {
+            return failedAttempt(
+                attemptID: attemptID,
+                recordedAt: recordedAt,
+                filename: filename,
+                byteCount: byteCount,
+                error: error
+            )
+        }
         let boundary = "CoffeeSync-\(UUID().uuidString)"
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
@@ -47,12 +91,60 @@ final class AudDRecognitionEngine {
         )
         body.append("--\(boundary)--\r\n".data(using: .utf8)!)
 
-        let (data, response) = try await URLSession.shared.upload(for: request, from: body)
-        guard let http = response as? HTTPURLResponse, 200 ..< 300 ~= http.statusCode else {
-            throw AudDError.recognitionFailed("連線失敗或伺服器拒絕請求。")
-        }
+        do {
+            let (data, response) = try await URLSession.shared.upload(for: request, from: body)
+            let httpStatusCode = (response as? HTTPURLResponse)?.statusCode
+            let responseDetails = responseDetails(from: data)
 
-        return try decodeRecognition(data)
+            guard let httpStatusCode, 200 ..< 300 ~= httpStatusCode else {
+                return failedAttempt(
+                    attemptID: attemptID,
+                    recordedAt: recordedAt,
+                    filename: filename,
+                    byteCount: byteCount,
+                    httpStatusCode: httpStatusCode,
+                    serviceStatus: responseDetails.status,
+                    responseExcerpt: responseExcerpt(from: data),
+                    error: AudDError.recognitionFailed("AudD HTTP \(httpStatusCode.map(String.init) ?? "未知")")
+                )
+            }
+
+            do {
+                let song = try decodeRecognition(data)
+                return AudDRecognitionAttempt(
+                    song: song,
+                    diagnostic: AudDRecognitionDiagnostic(
+                        attemptID: attemptID,
+                        recordedAt: recordedAt,
+                        sourceFilename: filename,
+                        audioByteCount: byteCount,
+                        httpStatusCode: httpStatusCode,
+                        serviceStatus: responseDetails.status,
+                        errorDescription: nil,
+                        responseExcerpt: responseExcerpt(from: data)
+                    )
+                )
+            } catch {
+                return failedAttempt(
+                    attemptID: attemptID,
+                    recordedAt: recordedAt,
+                    filename: filename,
+                    byteCount: byteCount,
+                    httpStatusCode: httpStatusCode,
+                    serviceStatus: responseDetails.status,
+                    responseExcerpt: responseExcerpt(from: data),
+                    error: error
+                )
+            }
+        } catch {
+            return failedAttempt(
+                attemptID: attemptID,
+                recordedAt: recordedAt,
+                filename: filename,
+                byteCount: byteCount,
+                error: error
+            )
+        }
     }
 
     func decodeRecognition(_ data: Data) throws -> RecognizedSong {
@@ -76,6 +168,45 @@ final class AudDRecognitionEngine {
             matchOffset: AudDTimecode.seconds(from: result.timecode),
             receivedAt: .now
         )
+    }
+
+    private func failedAttempt(
+        attemptID: UUID,
+        recordedAt: Date,
+        filename: String,
+        byteCount: Int?,
+        httpStatusCode: Int? = nil,
+        serviceStatus: String? = nil,
+        responseExcerpt: String? = nil,
+        error: Error
+    ) -> AudDRecognitionAttempt {
+        AudDRecognitionAttempt(
+            song: nil,
+            diagnostic: AudDRecognitionDiagnostic(
+                attemptID: attemptID,
+                recordedAt: recordedAt,
+                sourceFilename: filename,
+                audioByteCount: byteCount,
+                httpStatusCode: httpStatusCode,
+                serviceStatus: serviceStatus,
+                errorDescription: error.localizedDescription,
+                responseExcerpt: responseExcerpt
+            )
+        )
+    }
+
+    private func responseDetails(from data: Data) -> (status: String?, error: String?) {
+        guard let response = try? JSONDecoder().decode(AudDResponse.self, from: data) else {
+            return (nil, nil)
+        }
+        return (response.status, response.error?.errorMessage)
+    }
+
+    private func responseExcerpt(from data: Data, limit: Int = 16_384) -> String? {
+        let prefix = data.prefix(limit)
+        guard var text = String(data: prefix, encoding: .utf8) else { return nil }
+        if data.count > limit { text += "\n[response truncated at \(limit) bytes]" }
+        return text
     }
 }
 
