@@ -27,6 +27,16 @@ enum RecognitionProvider: String, CaseIterable, Codable, Identifiable, Sendable 
     var requiresShazamIO: Bool { self == .shazamIO || self == .comparison }
 }
 
+enum CaptureDurationOption: Int, CaseIterable, Identifiable, Sendable {
+    case five = 5
+    case eight = 8
+    case ten = 10
+
+    var id: Int { rawValue }
+    var seconds: TimeInterval { TimeInterval(rawValue) }
+    var displayName: String { "\(rawValue) 秒" }
+}
+
 struct RecognitionComparison: Equatable, Sendable {
     struct Result: Equatable, Sendable {
         let provider: RecognitionProvider

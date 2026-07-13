@@ -60,6 +60,11 @@ final class SyncPlannerTests: XCTestCase {
         XCTAssertEqual(plan.estimatedDrift, 20, accuracy: 0.000_1)
     }
 
+    func testCaptureDurationOptionsExposeFiveEightAndTenSeconds() {
+        XCTAssertEqual(CaptureDurationOption.allCases.map(\.seconds), [5, 8, 10])
+        XCTAssertEqual(CaptureDurationOption.eight.displayName, "8 秒")
+    }
+
     func testGateRejectsTheSameSongAndRapidTrackThrashing() {
         let first = RecognizedSong(title: "One", artist: "Artist", musicURL: URL(string: "https://music.apple.com/one"), matchOffset: 10)
         let second = RecognizedSong(title: "Two", artist: "Artist", musicURL: URL(string: "https://music.apple.com/two"), matchOffset: 10)

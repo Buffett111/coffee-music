@@ -11,8 +11,9 @@ final class CoffeeSessionViewModel: ObservableObject {
     @Published private(set) var sessionStartedAt: Date?
     @Published private(set) var statusDetail = "選擇辨識後端，開始讓 Mac 聽店內音樂。"
     @Published var automaticSwitching = true
-    /// Extra delay after the fixed five-second capture baseline.
+    /// Extra delay after the selected capture baseline.
     @Published var latencyAdjustment: TimeInterval = 0
+    @Published var captureDuration: CaptureDurationOption = .ten
     @Published var recognitionProvider: RecognitionProvider = .audD
     @Published var audDToken: String
     @Published var youTubeAPIKey: String
@@ -194,7 +195,7 @@ final class CoffeeSessionViewModel: ObservableObject {
             guard granted else {
                 sessionIsActive = false
                 phase = .unavailable("麥克風權限未允許")
-                statusDetail = "CoffeeSync 不會保存錄音；它只會處理單次 5 秒片段。"
+                statusDetail = "CoffeeSync 不會保存錄音；它只會處理單次 \(captureDuration.rawValue) 秒片段。"
                 return
             }
             startRecognitionCycle()
@@ -366,7 +367,7 @@ final class CoffeeSessionViewModel: ObservableObject {
     }
 
     private var recognitionCaptureDuration: TimeInterval {
-        recognitionProvider.requiresShazamIO ? 10 : 5
+        captureDuration.seconds
     }
 
     private func requestMicrophoneAccess() async -> Bool {

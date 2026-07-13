@@ -196,6 +196,21 @@ struct ContentView: View {
                 .foregroundStyle(.white)
             Divider().overlay(.white.opacity(0.18)).padding(.vertical, 6)
             VStack(alignment: .leading, spacing: 8) {
+                Text("環境音錄音長度")
+                    .foregroundStyle(.white)
+                Picker("錄音長度", selection: $model.captureDuration) {
+                    ForEach(CaptureDurationOption.allCases) { option in
+                        Text(option.displayName).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .disabled(model.isActive)
+                Text("錄音長度也會成為播放對時的初始 offset；ShazamIO 建議使用 10 秒。")
+                    .font(.footnote)
+                    .foregroundStyle(.white.opacity(0.62))
+            }
+            Divider().overlay(.white.opacity(0.18)).padding(.vertical, 6)
+            VStack(alignment: .leading, spacing: 8) {
                 Text("獨立播放器測試")
                     .foregroundStyle(.white)
                 Text("搜尋 Lewis Capaldi 的 \"Wish You The Best\" 並在下方的可見 YouTube 播放器播放；不會使用麥克風或 AudD。")
@@ -208,7 +223,7 @@ struct ContentView: View {
             Divider().overlay(.white.opacity(0.18)).padding(.vertical, 6)
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text("額外播放延遲（基準已含 5 秒錄音）").foregroundStyle(.white)
+                    Text("額外播放延遲（基準含所選錄音長度）").foregroundStyle(.white)
                     Spacer()
                     Text(String(format: "+%.2fs", model.latencyAdjustment))
                         .monospacedDigit()
@@ -233,7 +248,7 @@ struct ContentView: View {
     }
 
     private var privacyNote: some View {
-        Label("開發診斷啟用時，每輪 5 秒 WAV 與辨識後端回應摘要會保存在本機；可隨時關閉。請勿分享含有店內談話的錄音。", systemImage: "lock.fill")
+        Label("開發診斷啟用時，每輪 WAV 與辨識後端回應摘要會保存在本機；可隨時關閉。請勿分享含有店內談話的錄音。", systemImage: "lock.fill")
             .font(.footnote)
             .foregroundStyle(.white.opacity(0.62))
     }
