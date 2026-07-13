@@ -21,7 +21,7 @@ final class SyncPlannerTests: XCTestCase {
             songDuration: 240
         )
 
-        XCTAssertEqual(plan.targetOffset, 44.0, accuracy: 0.000_1)
+        XCTAssertEqual(plan.targetOffset, 49.0, accuracy: 0.000_1)
     }
 
     func testPlannerDoesNotSeekPastTheUsableEndOfTrack() {
@@ -40,6 +40,24 @@ final class SyncPlannerTests: XCTestCase {
         )
 
         XCTAssertEqual(plan.targetOffset, 179.5, accuracy: 0.000_1)
+    }
+
+    func testPlannerUsesFiveSecondCaptureAsTheInitialOffsetBeforeExtraDelay() {
+        let song = RecognizedSong(
+            title: "Fresh Brew",
+            artist: "Beans",
+            musicURL: nil,
+            matchOffset: 12,
+            receivedAt: Date(timeIntervalSinceReferenceDate: 100)
+        )
+        let plan = SyncPlanner(startupAllowance: 0, captureDuration: 5).plan(
+            for: song,
+            now: Date(timeIntervalSinceReferenceDate: 100),
+            outputLatency: 15
+        )
+
+        XCTAssertEqual(plan.targetOffset, 32, accuracy: 0.000_1)
+        XCTAssertEqual(plan.estimatedDrift, 20, accuracy: 0.000_1)
     }
 
     func testGateRejectsTheSameSongAndRapidTrackThrashing() {

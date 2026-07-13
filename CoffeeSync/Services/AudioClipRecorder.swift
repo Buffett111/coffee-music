@@ -22,7 +22,7 @@ final class AudioClipRecorder {
     private var recordingURL: URL?
     private(set) var isRecording = false
 
-    func record(duration: TimeInterval = 10) throws {
+    func record(duration: TimeInterval = 5) throws {
         guard !isRecording else { return }
         let input = audioEngine.inputNode
         let format = input.outputFormat(forBus: 0)

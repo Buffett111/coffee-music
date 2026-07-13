@@ -208,13 +208,13 @@ struct ContentView: View {
             Divider().overlay(.white.opacity(0.18)).padding(.vertical, 6)
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text("啟動與耳機延遲微調").foregroundStyle(.white)
+                    Text("額外播放延遲（基準已含 5 秒錄音）").foregroundStyle(.white)
                     Spacer()
                     Text(String(format: "+%.2fs", model.latencyAdjustment))
                         .monospacedDigit()
                         .foregroundStyle(.orange)
                 }
-                Slider(value: $model.latencyAdjustment, in: 0...2, step: 0.05)
+                Slider(value: $model.latencyAdjustment, in: 0...15, step: 0.25)
             }
             Divider().overlay(.white.opacity(0.18)).padding(.vertical, 6)
             Toggle("開發診斷：保留每輪 WAV 與辨識 log", isOn: $model.preserveDiagnosticAudio)
@@ -233,7 +233,7 @@ struct ContentView: View {
     }
 
     private var privacyNote: some View {
-        Label("開發診斷啟用時，每輪 10 秒 WAV 與辨識後端回應摘要會保存在本機；可隨時關閉。請勿分享含有店內談話的錄音。", systemImage: "lock.fill")
+        Label("開發診斷啟用時，每輪 5 秒 WAV 與辨識後端回應摘要會保存在本機；可隨時關閉。請勿分享含有店內談話的錄音。", systemImage: "lock.fill")
             .font(.footnote)
             .foregroundStyle(.white.opacity(0.62))
     }

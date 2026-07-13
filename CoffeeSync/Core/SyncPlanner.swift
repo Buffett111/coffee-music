@@ -2,11 +2,12 @@ import Foundation
 
 /// Converts an AudD match into the point that Music.app should play now.
 ///
-/// A match offset refers to the catalog recording.  By the time the app receives
-/// that result and asks Apple Music to start, the café track has advanced.  This
-/// planner adds the measured elapsed time and a user-calibrated output allowance.
+/// A match offset refers to the catalog recording. By the time the app receives
+/// that result and asks the player to start, the café track has advanced by the
+/// capture window, recognition time, and any user-selected extra allowance.
 struct SyncPlanner: Sendable {
     var startupAllowance: TimeInterval = 0.35
+    var captureDuration: TimeInterval = 5
     var maximumSeekableTail: TimeInterval = 0.5
 
     func plan(
@@ -16,7 +17,8 @@ struct SyncPlanner: Sendable {
         songDuration: TimeInterval? = nil
     ) -> PlaybackPlan {
         let elapsedSinceMatch = max(0, now.timeIntervalSince(song.receivedAt))
-        var offset = max(0, song.matchOffset + elapsedSinceMatch + outputLatency + startupAllowance)
+        let captureBaseline = max(0, captureDuration)
+        var offset = max(0, song.matchOffset + captureBaseline + elapsedSinceMatch + outputLatency + startupAllowance)
 
         if let songDuration, songDuration > maximumSeekableTail {
             offset = min(offset, songDuration - maximumSeekableTail)
@@ -24,8 +26,8 @@ struct SyncPlanner: Sendable {
 
         return PlaybackPlan(
             targetOffset: offset,
-            estimatedDrift: elapsedSinceMatch + outputLatency + startupAllowance,
-            explanation: "Match \(format(song.matchOffset)) + elapsed \(format(elapsedSinceMatch)) + route \(format(outputLatency))"
+            estimatedDrift: captureBaseline + elapsedSinceMatch + outputLatency + startupAllowance,
+            explanation: "Match \(format(song.matchOffset)) + capture \(format(captureBaseline)) + elapsed \(format(elapsedSinceMatch)) + extra \(format(outputLatency))"
         )
     }
 

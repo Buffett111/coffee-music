@@ -11,7 +11,8 @@ final class CoffeeSessionViewModel: ObservableObject {
     @Published private(set) var sessionStartedAt: Date?
     @Published private(set) var statusDetail = "選擇辨識後端，開始讓 Mac 聽店內音樂。"
     @Published var automaticSwitching = true
-    @Published var latencyAdjustment: TimeInterval = 0.70
+    /// Extra delay after the fixed five-second capture baseline.
+    @Published var latencyAdjustment: TimeInterval = 0
     @Published var recognitionProvider: RecognitionProvider = .audD
     @Published var audDToken: String
     @Published var youTubeAPIKey: String
@@ -25,7 +26,7 @@ final class CoffeeSessionViewModel: ObservableObject {
     private let audDRecognizer = AudDRecognitionEngine()
     private let shazamIORecognizer = ShazamIORecognitionEngine()
     private let playback = YouTubePlaybackEngine()
-    private let planner = SyncPlanner(startupAllowance: 0.55)
+    private let planner = SyncPlanner(startupAllowance: 0.55, captureDuration: 5)
     private var switchGate = TrackSwitchGate(minimumSwitchInterval: 15)
     private var nextCycle: Task<Void, Never>?
     private var sessionIsActive = false
@@ -185,7 +186,7 @@ final class CoffeeSessionViewModel: ObservableObject {
             guard granted else {
                 sessionIsActive = false
                 phase = .unavailable("麥克風權限未允許")
-                statusDetail = "CoffeeSync 不會保存錄音；它只會處理單次 10 秒片段。"
+                statusDetail = "CoffeeSync 不會保存錄音；它只會處理單次 5 秒片段。"
                 return
             }
             startRecognitionCycle()
@@ -196,8 +197,8 @@ final class CoffeeSessionViewModel: ObservableObject {
         guard sessionIsActive else { return }
         do {
             phase = .recording
-            statusDetail = "正在擷取 10 秒環境音，使用 Mac 內建麥克風效果最佳。"
-            try recorder.record(duration: 10)
+            statusDetail = "正在擷取 5 秒環境音，使用 Mac 內建麥克風效果最佳。"
+            try recorder.record(duration: 5)
         } catch {
             sessionIsActive = false
             phase = .failed(error.localizedDescription)
