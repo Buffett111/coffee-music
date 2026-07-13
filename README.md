@@ -57,11 +57,14 @@ xcodebuild -project CoffeeSync.xcodeproj -scheme CoffeeSync \
 3. Read the title, artist, Apple Music URL, and match timecode returned by
    AudD.
 4. Add elapsed processing time plus the user-calibrated output allowance.
-5. Ask Music.app to play and seek. The app rechecks roughly every 45 seconds,
-   avoids restarting a stable match, and deletes the temporary WAV once AudD
-   returns. It waits for Music.app to report a playing, seekable track before
-   seeking; if loading takes too long, it keeps normal playback and reports
-   that synchronization is not ready.
+5. Ask Music.app to play and seek. The app first looks for the exact title and
+   artist in the user's Music library, then rechecks roughly every 45 seconds
+   and avoids restarting a stable match. It waits for Music.app to report a
+   playing, seekable track with the recognized title and artist before seeking.
+   If the target does not start, it reports that failure rather than mistaking
+   unrelated AutoPlay audio for success. When a song is absent from the library,
+   CoffeeSync opens AudD's Apple Music link but does not issue a bare `play`
+   command, which would otherwise start unrelated AutoPlay audio.
 
 ## Development diagnostics
 

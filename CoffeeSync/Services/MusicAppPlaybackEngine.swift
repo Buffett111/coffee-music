@@ -18,11 +18,15 @@ enum MusicAppPlaybackError: LocalizedError {
 enum MusicAppPlaybackResult: Equatable {
     case synchronized
     case playingWithoutSynchronization
+    case catalogOpened
+    case targetDidNotStart
 }
 
 struct MusicPlayerSnapshot: Equatable {
     let state: String
     let duration: TimeInterval
+    let title: String
+    let artist: String
 
     var isPlaying: Bool { state.lowercased() == "playing" }
 
@@ -30,11 +34,23 @@ struct MusicPlayerSnapshot: Equatable {
         isPlaying && duration.isFinite && duration > offset
     }
 
+    func matches(_ song: RecognizedSong) -> Bool {
+        normalized(title) == normalized(song.title) && normalized(artist) == normalized(song.artist)
+    }
+
     static func parse(_ value: String) -> MusicPlayerSnapshot {
-        let fields = value.split(separator: "|", maxSplits: 1, omittingEmptySubsequences: false)
+        let fields = value.split(separator: "|", omittingEmptySubsequences: false)
         let state = fields.first.map(String.init) ?? "unknown"
-        let duration = fields.count == 2 ? TimeInterval(fields[1]) ?? 0 : 0
-        return MusicPlayerSnapshot(state: state, duration: duration)
+        let duration = fields.count > 1 ? TimeInterval(fields[1]) ?? 0 : 0
+        let title = fields.count > 2 ? String(fields[2]) : ""
+        let artist = fields.count > 3 ? String(fields[3]) : ""
+        return MusicPlayerSnapshot(state: state, duration: duration, title: title, artist: artist)
+    }
+
+    private func normalized(_ value: String) -> String {
+        value
+            .folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: .current)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 
@@ -45,21 +61,26 @@ final class MusicAppPlaybackEngine {
     private let readinessInterval: Duration = .milliseconds(500)
 
     func play(_ song: RecognizedSong, from offset: TimeInterval) async throws -> MusicAppPlaybackResult {
-        let query = escape(song.displayName)
+        let title = escape(song.title)
+        let artist = escape(song.artist)
 
         let libraryScript = """
         tell application "Music"
-            set matches to (search library playlist 1 for "\(query)" only all)
-            if (count of matches) > 0 then
-                play item 1 of matches
-                return "library"
-            end if
+            set matches to (search library playlist 1 for "\(title)" only all)
+            repeat with candidate in matches
+                try
+                    if (artist of candidate as text) is "\(artist)" then
+                        play candidate
+                        return "library"
+                    end if
+                end try
+            end repeat
         end tell
         return "not found"
         """
 
         if try execute(libraryScript) == "library" {
-            return try await waitForSeekReadiness(offset: offset)
+            return try await waitForSeekReadiness(for: song, offset: offset)
         }
 
         guard let url = song.musicURL else { throw MusicAppPlaybackError.missingMusicLink }
@@ -68,12 +89,11 @@ final class MusicAppPlaybackEngine {
         tell application "Music"
             activate
             open location "\(urlString)"
-            play
             return "catalog"
         end tell
         """
         _ = try execute(catalogScript)
-        return try await waitForSeekReadiness(offset: offset)
+        return .catalogOpened
     }
 
     func stop() {
@@ -93,10 +113,15 @@ final class MusicAppPlaybackEngine {
         return result.stringValue ?? ""
     }
 
-    private func waitForSeekReadiness(offset: TimeInterval) async throws -> MusicAppPlaybackResult {
+    private func waitForSeekReadiness(for song: RecognizedSong, offset: TimeInterval) async throws -> MusicAppPlaybackResult {
         let safeOffset = max(0, offset)
+        var sawTargetTrack = false
         for attempt in 0 ..< readinessAttempts {
-            if try playerSnapshot().canSeek(to: safeOffset) {
+            let snapshot = try playerSnapshot()
+            if snapshot.matches(song) {
+                sawTargetTrack = true
+            }
+            if snapshot.matches(song), snapshot.canSeek(to: safeOffset) {
                 do {
                     try setPlayerPosition(safeOffset)
                     return .synchronized
@@ -111,16 +136,16 @@ final class MusicAppPlaybackEngine {
                 try await Task.sleep(for: readinessInterval)
             }
         }
-        return .playingWithoutSynchronization
+        return sawTargetTrack ? .playingWithoutSynchronization : .targetDidNotStart
     }
 
     private func playerSnapshot() throws -> MusicPlayerSnapshot {
         let script = """
         tell application "Music"
             try
-                return (player state as text) & "|" & (duration of current track as text)
+                return (player state as text) & "|" & (duration of current track as text) & "|" & (name of current track as text) & "|" & (artist of current track as text)
             on error
-                return "unknown|0"
+                return "unknown|0||"
             end try
         end tell
         """

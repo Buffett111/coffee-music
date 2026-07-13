@@ -113,4 +113,17 @@ final class SyncPlannerTests: XCTestCase {
         XCTAssertFalse(MusicPlayerSnapshot.parse("playing|20").canSeek(to: 21.536))
         XCTAssertFalse(MusicPlayerSnapshot.parse("unknown|0").canSeek(to: 21.536))
     }
+
+    func testMusicPlayerSnapshotRequiresTheRecognizedSongBeforeSeeking() {
+        let song = RecognizedSong(title: "Hold Me While You Wait", artist: "Lewis Capaldi", musicURL: nil, matchOffset: 12)
+
+        XCTAssertTrue(MusicPlayerSnapshot.parse("playing|219|Hold Me While You Wait|Lewis Capaldi").matches(song))
+        XCTAssertFalse(MusicPlayerSnapshot.parse("playing|219|AutoPlay|").matches(song))
+    }
+
+    func testCatalogFallbackDoesNotClaimPlayback() {
+        XCTAssertNotEqual(MusicAppPlaybackResult.catalogOpened, .synchronized)
+        XCTAssertNotEqual(MusicAppPlaybackResult.catalogOpened, .playingWithoutSynchronization)
+        XCTAssertNotEqual(MusicAppPlaybackResult.targetDidNotStart, .synchronized)
+    }
 }
