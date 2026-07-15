@@ -13,17 +13,16 @@
 		A10000000000000000000004 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* Models.swift */; };
 		A10000000000000000000005 /* SyncPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* SyncPlanner.swift */; };
 		A10000000000000000000006 /* AudioClipRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* AudioClipRecorder.swift */; };
-		A10000000000000000000007 /* AudDRecognitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* AudDRecognitionEngine.swift */; };
 		A10000000000000000000009 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B /* AVFoundation.framework */; };
 		A1000000000000000000000C /* SyncPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* SyncPlannerTests.swift */; };
 		A1000000000000000000000D /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000E /* XCTest.framework */; };
-		A1000000000000000000000E /* AudDTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* AudDTokenStore.swift */; };
 		A1000000000000000000000F /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* Security.framework */; };
 		A10000000000000000000010 /* RecognitionDiagnosticsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* RecognitionDiagnosticsStore.swift */; };
 		A10000000000000000000011 /* YouTubePlaybackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* YouTubePlaybackEngine.swift */; };
 		A10000000000000000000012 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* WebKit.framework */; };
 		A10000000000000000000013 /* ShazamIORecognitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000016 /* ShazamIORecognitionEngine.swift */; };
 		A10000000000000000000014 /* ShazamIO in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* ShazamIO */; };
+		A10000000000000000000015 /* RecognitionTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* RecognitionTypes.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -43,20 +42,19 @@
 		A20000000000000000000004 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		A20000000000000000000005 /* SyncPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncPlanner.swift; sourceTree = "<group>"; };
 		A20000000000000000000006 /* AudioClipRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioClipRecorder.swift; sourceTree = "<group>"; };
-		A20000000000000000000007 /* AudDRecognitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudDRecognitionEngine.swift; sourceTree = "<group>"; };
 		A20000000000000000000009 /* SyncPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncPlannerTests.swift; sourceTree = "<group>"; };
 		A2000000000000000000000A /* CoffeeSync.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CoffeeSync.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A2000000000000000000000B /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		A2000000000000000000000E /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
 		A2000000000000000000000F /* CoffeeSyncTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CoffeeSyncTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000000000000000000010 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		A20000000000000000000011 /* AudDTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudDTokenStore.swift; sourceTree = "<group>"; };
 		A20000000000000000000012 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		A20000000000000000000013 /* RecognitionDiagnosticsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecognitionDiagnosticsStore.swift; sourceTree = "<group>"; };
 		A20000000000000000000014 /* YouTubePlaybackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubePlaybackEngine.swift; sourceTree = "<group>"; };
 		A20000000000000000000015 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		A20000000000000000000016 /* ShazamIORecognitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShazamIORecognitionEngine.swift; sourceTree = "<group>"; };
 		A20000000000000000000017 /* ShazamIO */ = {isa = PBXFileReference; lastKnownFileType = folder; path = DevelopmentSupport/ShazamIO; sourceTree = "<group>"; };
+		A20000000000000000000018 /* RecognitionTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecognitionTypes.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -126,11 +124,10 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000006 /* AudioClipRecorder.swift */,
-				A20000000000000000000007 /* AudDRecognitionEngine.swift */,
-				A20000000000000000000011 /* AudDTokenStore.swift */,
 				A20000000000000000000013 /* RecognitionDiagnosticsStore.swift */,
 				A20000000000000000000014 /* YouTubePlaybackEngine.swift */,
 				A20000000000000000000016 /* ShazamIORecognitionEngine.swift */,
+				A20000000000000000000018 /* RecognitionTypes.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -267,11 +264,10 @@
 				A10000000000000000000004 /* Models.swift in Sources */,
 				A10000000000000000000005 /* SyncPlanner.swift in Sources */,
 				A10000000000000000000006 /* AudioClipRecorder.swift in Sources */,
-				A10000000000000000000007 /* AudDRecognitionEngine.swift in Sources */,
-				A1000000000000000000000E /* AudDTokenStore.swift in Sources */,
 				A10000000000000000000010 /* RecognitionDiagnosticsStore.swift in Sources */,
 				A10000000000000000000011 /* YouTubePlaybackEngine.swift in Sources */,
 				A10000000000000000000013 /* ShazamIORecognitionEngine.swift in Sources */,
+				A10000000000000000000015 /* RecognitionTypes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

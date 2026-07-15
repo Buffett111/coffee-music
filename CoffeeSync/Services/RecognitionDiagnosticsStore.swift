@@ -9,13 +9,10 @@ struct RecognitionDiagnosticLog: Codable {
         let title: String
         let artist: String
         let matchOffset: TimeInterval
-        let appleMusicURL: String?
-
         init(_ song: RecognizedSong) {
             title = song.title
             artist = song.artist
             matchOffset = song.matchOffset
-            appleMusicURL = song.musicURL?.absoluteString
         }
     }
 }

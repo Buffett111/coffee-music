@@ -20,9 +20,7 @@ enum ShazamIORecognitionError: LocalizedError {
     }
 }
 
-/// A development-only bridge to the ShazamIO runtime bundled as an app resource.
-/// This branch intentionally vendors Python and ShazamIO so its results do not
-/// depend on a second local repository.
+/// Bridge to the ShazamIO runtime bundled as an app resource.
 final class ShazamIORecognitionEngine {
     struct Environment: Sendable {
         let root: URL
@@ -148,7 +146,6 @@ final class ShazamIORecognitionEngine {
         let song = RecognizedSong(
             title: track.title,
             artist: track.subtitle,
-            musicURL: nil,
             matchOffset: max(0, response.firstMatch?.offset ?? 0),
             receivedAt: .now
         )
@@ -156,7 +153,7 @@ final class ShazamIORecognitionEngine {
             song: song,
             diagnostic: RecognitionDiagnostic(
                 attemptID: attemptID,
-                provider: .shazamIO,
+                provider: "ShazamIO",
                 recordedAt: recordedAt,
                 sourceFilename: filename,
                 audioByteCount: byteCount,
@@ -190,7 +187,7 @@ final class ShazamIORecognitionEngine {
             song: nil,
             diagnostic: RecognitionDiagnostic(
                 attemptID: attemptID,
-                provider: .shazamIO,
+                provider: "ShazamIO",
                 recordedAt: recordedAt,
                 sourceFilename: filename,
                 audioByteCount: byteCount,

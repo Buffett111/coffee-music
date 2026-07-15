@@ -14,8 +14,8 @@ enum AudioClipRecorderError: LocalizedError {
     }
 }
 
-/// Records one short WAV clip. CoffeeSessionViewModel deletes it after AudD
-/// processes it, or copies it to the local diagnostics folder when enabled.
+/// Records one short WAV clip for ShazamIO, then deletes it unless diagnostics
+/// explicitly preserve a local copy.
 final class AudioClipRecorder {
     var onClipFinished: ((URL) -> Void)?
     var onRecordingError: ((Error) -> Void)?
