@@ -31,6 +31,25 @@ struct YouTubeMusicSongCandidate: Decodable, Equatable, Sendable {
     let album: String?
     let durationSeconds: TimeInterval?
     let resultType: String?
+    let searchRank: Int
+
+    init(
+        videoID: String,
+        title: String,
+        artists: [String],
+        album: String?,
+        durationSeconds: TimeInterval?,
+        resultType: String?,
+        searchRank: Int = 0
+    ) {
+        self.videoID = videoID
+        self.title = title
+        self.artists = artists
+        self.album = album
+        self.durationSeconds = durationSeconds
+        self.resultType = resultType
+        self.searchRank = searchRank
+    }
 }
 
 /// Uses YouTube Music's song-only catalog as a resolver, then hands its video
@@ -57,24 +76,41 @@ final class YouTubePlaybackEngine {
         in candidates: [YouTubeMusicSongCandidate],
         for song: RecognizedSong
     ) -> YouTubeMusicSongCandidate? {
-        candidates.max { score($0, for: song) < score($1, for: song) }
+        // A title match alone is unsafe: songs with the same English title are
+        // common. Never use a candidate whose artist set has no local match.
+        let eligible = candidates.filter { artistMatch($0.artists, expected: song.artist) != .none }
+        guard !eligible.isEmpty else { return nil }
+
+        return eligible.max { lhs, rhs in
+            let leftScore = score(lhs, for: song)
+            let rightScore = score(rhs, for: song)
+            if leftScore == rightScore {
+                // Keep YouTube Music's relevance order when local evidence is
+                // tied. Lower rank means the service returned it earlier.
+                return lhs.searchRank > rhs.searchRank
+            }
+            return leftScore < rightScore
+        }
     }
 
     private static func score(_ candidate: YouTubeMusicSongCandidate, for song: RecognizedSong) -> Int {
         let expectedTitle = normalized(song.title)
-        let expectedArtist = normalized(song.artist)
         let title = normalized(candidate.title)
-        let artists = candidate.artists.map(normalized)
-        let sourceDescription = "\(expectedTitle) \(expectedArtist)"
-        var result = 0
+        let matchedArtists = artistMatch(candidate.artists, expected: song.artist)
+        let sourceDescription = "\(expectedTitle) \(normalized(song.artist))"
+        // Search rank is intentionally a modest signal: a lower-ranked item
+        // can still win with stronger title/artist evidence, but an exact
+        // title from an unrelated artist cannot.
+        var result = max(0, 90 - (candidate.searchRank * 9))
 
-        if title == expectedTitle { result += 100 }
-        else if title.contains(expectedTitle) { result += 25 }
-        else { result -= 80 }
+        if title == expectedTitle { result += 130 }
+        else if title.contains(expectedTitle) || expectedTitle.contains(title) { result += 35 }
 
-        if artists.contains(expectedArtist) { result += 60 }
-        else if artists.contains(where: { $0.contains(expectedArtist) || expectedArtist.contains($0) }) { result += 20 }
-        else { result -= 100 }
+        switch matchedArtists {
+        case .full: result += 360
+        case .partial: result += 150
+        case .none: return Int.min
+        }
 
         let candidateDescription = "\(title) \(normalized(candidate.album ?? ""))"
         for marker in variantMarkers where candidateDescription.contains(marker) && !sourceDescription.contains(marker) {
@@ -83,6 +119,56 @@ final class YouTubePlaybackEngine {
         if candidate.durationSeconds == nil { result -= 5 }
         return result
     }
+
+    private enum ArtistMatch {
+        case none
+        case partial
+        case full
+    }
+
+    private static func artistMatch(_ candidateArtists: [String], expected rawExpectedArtist: String) -> ArtistMatch {
+        let expectedArtists = splitArtists(rawExpectedArtist)
+        let candidateAliases = Set(candidateArtists.flatMap(artistAliases))
+        let matchedCount = expectedArtists.reduce(into: 0) { count, artist in
+            if !Set(artistAliases(artist)).isDisjoint(with: candidateAliases) {
+                count += 1
+            }
+        }
+        guard matchedCount > 0 else { return .none }
+        return matchedCount == expectedArtists.count ? .full : .partial
+    }
+
+    private static func splitArtists(_ artists: String) -> [String] {
+        let separators = CharacterSet(charactersIn: "&,/;、，")
+        let normalizedSeparators = artists
+            .replacingOccurrences(of: " feat. ", with: " & ", options: .caseInsensitive)
+            .replacingOccurrences(of: " featuring ", with: " & ", options: .caseInsensitive)
+            .replacingOccurrences(of: " and ", with: " & ", options: .caseInsensitive)
+            .replacingOccurrences(of: "與", with: "&")
+            .replacingOccurrences(of: "和", with: "&")
+        let parts = normalizedSeparators.components(separatedBy: separators)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        return parts.isEmpty ? [artists] : parts
+    }
+
+    private static func artistAliases(_ artist: String) -> [String] {
+        let direct = normalized(artist)
+        let latin = normalized(artist.applyingTransform(.toLatin, reverse: false) ?? artist)
+        var aliases = Set([direct, latin])
+        for group in artistAliasGroups where !aliases.isDisjoint(with: group) {
+            aliases.formUnion(group)
+        }
+        return Array(aliases)
+    }
+
+    // Stage names are not reliably derivable by transliteration alone. Keep a
+    // small, auditable local alias table for common Chinese/English names; the
+    // generic Latin transform above covers ordinary transliterated names.
+    private static let artistAliasGroups: [Set<String>] = [
+        ["jaychou", "周杰倫", "周杰伦", "zhoujielun"].map(normalized).reduce(into: Set<String>()) { $0.insert($1) },
+        ["garyyang", "楊瑞代", "杨瑞代", "yangruida"].map(normalized).reduce(into: Set<String>()) { $0.insert($1) }
+    ]
 
     private static let variantMarkers = [
         "live", "concert", "cover", "karaoke", "remix", "acoustic",

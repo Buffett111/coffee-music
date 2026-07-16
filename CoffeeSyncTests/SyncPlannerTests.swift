@@ -85,6 +85,70 @@ final class SyncPlannerTests: XCTestCase {
         XCTAssertEqual(YouTubePlaybackEngine.bestCandidate(in: candidates, for: song)?.videoID, "canonical")
     }
 
+    func testYouTubeMusicResolverUsesRankAndBilingualArtistAliases() {
+        let song = RecognizedSong(title: "Waiting For You", artist: "Jay Chou & Gary Yang", matchOffset: 12)
+        let candidates = [
+            YouTubeMusicSongCandidate(
+                videoID: "canonical",
+                title: "等你下課",
+                artists: ["周杰倫", "楊瑞代"],
+                album: "最偉大的作品",
+                durationSeconds: 270,
+                resultType: "song",
+                searchRank: 0
+            ),
+            YouTubeMusicSongCandidate(
+                videoID: "same-title-wrong-artist",
+                title: "Waiting For You",
+                artists: ["Anson Hu"],
+                album: "Yin Yue Hun He Ti",
+                durationSeconds: 323,
+                resultType: "song",
+                searchRank: 1
+            )
+        ]
+
+        XCTAssertEqual(YouTubePlaybackEngine.bestCandidate(in: candidates, for: song)?.videoID, "canonical")
+    }
+
+    func testYouTubeMusicResolverRejectsSameTitleWithoutArtistEvidence() {
+        let song = RecognizedSong(title: "Waiting For You", artist: "Jay Chou & Gary Yang", matchOffset: 12)
+        let candidates = [
+            YouTubeMusicSongCandidate(
+                videoID: "wrong-artist",
+                title: "Waiting For You",
+                artists: ["Anson Hu"],
+                album: nil,
+                durationSeconds: 323,
+                resultType: "song",
+                searchRank: 0
+            )
+        ]
+
+        XCTAssertNil(YouTubePlaybackEngine.bestCandidate(in: candidates, for: song))
+    }
+
+    func testYouTubeMusicLocalCandidateSelectionCompletesWithinOneSecond() {
+        let song = RecognizedSong(title: "Waiting For You", artist: "Jay Chou & Gary Yang", matchOffset: 12)
+        let candidates = (0 ..< 20).map { rank in
+            YouTubeMusicSongCandidate(
+                videoID: "candidate-\(rank)",
+                title: rank == 0 ? "等你下課" : "Waiting For You",
+                artists: rank == 0 ? ["周杰倫", "楊瑞代"] : ["Unrelated Artist \(rank)"],
+                album: nil,
+                durationSeconds: 240,
+                resultType: "song",
+                searchRank: rank
+            )
+        }
+
+        let startedAt = ContinuousClock.now
+        for _ in 0 ..< 1_000 {
+            _ = YouTubePlaybackEngine.bestCandidate(in: candidates, for: song)
+        }
+        XCTAssertLessThan(startedAt.duration(to: .now), .seconds(1))
+    }
+
     func testShazamIORunnerResponseUsesReturnedOffsetForSeeking() throws {
         let response = """
         {
