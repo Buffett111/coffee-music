@@ -13,7 +13,6 @@ final class CoffeeSessionViewModel: ObservableObject {
         didSet { applyLiveLatencyAdjustment(from: oldValue) }
     }
     @Published var captureDuration: CaptureDurationOption = .ten
-    @Published var youTubeAPIKey: String
     @Published private(set) var youTubeTarget: YouTubePlaybackTarget?
     @Published private(set) var playbackSeekCommand: YouTubeSeekCommand?
     @Published private(set) var nextRecognitionAt: Date?
@@ -28,7 +27,6 @@ final class CoffeeSessionViewModel: ObservableObject {
     private var recognitionGeneration = UUID()
 
     init() {
-        youTubeAPIKey = YouTubeAPIKeyStore.load()
         recorder.onClipFinished = { [weak self] url in
             Task { @MainActor in await self?.recognize(url) }
         }
@@ -59,18 +57,6 @@ final class CoffeeSessionViewModel: ObservableObject {
         }
     }
 
-    func saveYouTubeAPIKey() {
-        do {
-            try YouTubeAPIKeyStore.save(youTubeAPIKey.trimmingCharacters(in: .whitespacesAndNewlines))
-            statusDetail = youTubeAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                ? "YouTube API key 已從 Keychain 移除。"
-                : "YouTube Data API key 已儲存在這台 Mac 的 Keychain。"
-        } catch {
-            phase = .failed(error.localizedDescription)
-            statusDetail = "無法寫入 Keychain：\(error.localizedDescription)"
-        }
-    }
-
     func toggleSession() { sessionIsActive ? stopSession() : startSession() }
 
     func startSession() {
@@ -79,12 +65,6 @@ final class CoffeeSessionViewModel: ObservableObject {
             statusDetail = "找不到 app 內嵌的辨識引擎。請重新安裝 CoffeeSync。"
             return
         }
-        guard !youTubeAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            phase = .needsToken
-            statusDetail = "請先貼上並儲存自己的 YouTube Data API key。"
-            return
-        }
-        saveYouTubeAPIKey()
         sessionIsActive = true
         recognitionGeneration = UUID()
         switchGate.reset()
@@ -120,28 +100,32 @@ final class CoffeeSessionViewModel: ObservableObject {
         startRecognitionCycle()
     }
 
+    func playerDidFinish() {
+        guard sessionIsActive, case .playing = phase else { return }
+        nextCycle?.cancel()
+        nextCycle = nil
+        nextRecognitionAt = nil
+        switchGate.reset()
+        statusDetail = "歌曲播放完畢，正在立即重新偵測環境音。"
+        startRecognitionCycle()
+    }
+
     func testYouTubePlayback() {
         guard !sessionIsActive else {
             statusDetail = "請先停止同步，再執行獨立 YouTube 播放測試。"
             return
         }
-        guard !youTubeAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            phase = .needsToken
-            statusDetail = "請先貼上並儲存自己的 YouTube Data API key。"
-            return
-        }
-
         let song = RecognizedSong(title: "Wish You The Best", artist: "Lewis Capaldi", matchOffset: 0)
         let plan = PlaybackPlan(targetOffset: 0, estimatedDrift: 0, explanation: "YouTube 播放測試")
         lastRecognition = song
         currentPlan = plan
         youTubeTarget = nil
         phase = .switching(song)
-        statusDetail = "正在測試 YouTube 搜尋與可見播放器；不會使用麥克風。"
+        statusDetail = "正在測試 YouTube Music 歌曲解析與可見播放器；不會使用麥克風。"
 
         Task {
             do {
-                let target = try await playback.resolve(song: song, apiKey: youTubeAPIKey, startOffset: 0)
+                let target = try await playback.resolve(song: song, startOffset: 0)
                 youTubeTarget = target
                 phase = .playing(song, plan)
                 statusDetail = "YouTube 測試已載入「\(target.videoTitle)」。"
@@ -224,7 +208,7 @@ final class CoffeeSessionViewModel: ObservableObject {
         statusDetail = "正在 YouTube 尋找 \(song.displayName)。"
 
         do {
-            youTubeTarget = try await playback.resolve(song: song, apiKey: youTubeAPIKey, startOffset: plan.targetOffset)
+            youTubeTarget = try await playback.resolve(song: song, startOffset: plan.targetOffset)
             guard sessionIsActive, generation == recognitionGeneration else { return }
             switchGate.commitAttempt(for: song)
             phase = .playing(song, plan)

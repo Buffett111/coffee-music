@@ -53,14 +53,36 @@ final class SyncPlannerTests: XCTestCase {
         XCTAssertTrue(gate.beginAttempt(for: second, at: start.addingTimeInterval(9)))
     }
 
-    func testYouTubeSearchPrefersTheTitleAndArtistMatch() {
+    func testYouTubeMusicResolverRejectsLiveAndCoverVariants() {
         let song = RecognizedSong(title: "Wish You The Best", artist: "Lewis Capaldi", matchOffset: 12)
         let candidates = [
-            YouTubeSearchCandidate(videoID: "wrong", title: "Best of Pop", channelTitle: "Playlist Hub"),
-            YouTubeSearchCandidate(videoID: "right", title: "Lewis Capaldi - Wish You The Best (Official Audio)", channelTitle: "Lewis Capaldi")
+            YouTubeMusicSongCandidate(
+                videoID: "live",
+                title: "Wish You The Best (Live at the O2)",
+                artists: ["Lewis Capaldi"],
+                album: "Live at the O2",
+                durationSeconds: 284,
+                resultType: "song"
+            ),
+            YouTubeMusicSongCandidate(
+                videoID: "cover",
+                title: "Wish You The Best (Cover)",
+                artists: ["Gabriele Felici"],
+                album: "Wish You The Best (Cover)",
+                durationSeconds: 210,
+                resultType: "song"
+            ),
+            YouTubeMusicSongCandidate(
+                videoID: "canonical",
+                title: "Wish You The Best",
+                artists: ["Lewis Capaldi"],
+                album: "Broken By Desire To Be Heavenly Sent",
+                durationSeconds: 211,
+                resultType: "song"
+            )
         ]
 
-        XCTAssertEqual(YouTubePlaybackEngine.bestCandidate(in: candidates, for: song)?.videoID, "right")
+        XCTAssertEqual(YouTubePlaybackEngine.bestCandidate(in: candidates, for: song)?.videoID, "canonical")
     }
 
     func testShazamIORunnerResponseUsesReturnedOffsetForSeeking() throws {

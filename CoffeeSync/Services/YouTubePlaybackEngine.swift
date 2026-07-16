@@ -1,22 +1,18 @@
 import Foundation
-import Security
 
 enum YouTubePlaybackError: LocalizedError {
-    case missingAPIKey
+    case musicCatalogUnavailable(String)
+    case noCanonicalSong
     case invalidResponse
-    case noEmbeddableVideo
-    case requestFailed(String)
 
     var errorDescription: String? {
         switch self {
-        case .missingAPIKey:
-            "請先貼上並儲存 YouTube Data API key。"
+        case let .musicCatalogUnavailable(detail):
+            "YouTube Music 曲庫解析無法使用：\(detail)"
+        case .noCanonicalSong:
+            "YouTube Music 找不到可播放的標準歌曲版本。"
         case .invalidResponse:
-            "YouTube 回傳了無法讀取的搜尋結果。"
-        case .noEmbeddableVideo:
-            "YouTube 找不到可嵌入播放的對應影片。"
-        case let .requestFailed(message):
-            "YouTube 搜尋失敗：\(message)"
+            "YouTube Music 回傳了無法讀取的歌曲資料。"
         }
     }
 }
@@ -28,163 +24,162 @@ struct YouTubePlaybackTarget: Equatable, Sendable {
     let startOffset: TimeInterval
 }
 
-struct YouTubeSearchCandidate: Equatable, Sendable {
+struct YouTubeMusicSongCandidate: Decodable, Equatable, Sendable {
     let videoID: String
     let title: String
-    let channelTitle: String
+    let artists: [String]
+    let album: String?
+    let durationSeconds: TimeInterval?
+    let resultType: String?
 }
 
-/// Official YouTube Data API v3 search followed by the official IFrame player.
-/// This intentionally uses standard YouTube video metadata: YouTube Music does
-/// not provide a separate public catalog API for third-party macOS apps.
+/// Uses YouTube Music's song-only catalog as a resolver, then hands its video
+/// ID to YouTube's official, visible IFrame player. The resolver is provided by
+/// the bundled `ytmusicapi` experimental dependency and is intentionally kept
+/// separate from playback.
 final class YouTubePlaybackEngine {
+    private let musicCatalog = YouTubeMusicCatalogResolver()
+
     func resolve(
         song: RecognizedSong,
-        apiKey: String,
         startOffset: TimeInterval
     ) async throws -> YouTubePlaybackTarget {
-        let key = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !key.isEmpty else { throw YouTubePlaybackError.missingAPIKey }
-
-        var components = URLComponents(string: "https://www.googleapis.com/youtube/v3/search")!
-        components.queryItems = [
-            URLQueryItem(name: "part", value: "snippet"),
-            URLQueryItem(name: "type", value: "video"),
-            URLQueryItem(name: "maxResults", value: "5"),
-            URLQueryItem(name: "videoEmbeddable", value: "true"),
-            URLQueryItem(name: "videoSyndicated", value: "true"),
-            URLQueryItem(name: "q", value: "\(song.title) \(song.artist) official audio"),
-            URLQueryItem(name: "key", value: key)
-        ]
-        guard let url = components.url else { throw YouTubePlaybackError.invalidResponse }
-
-        let (data, response) = try await URLSession.shared.data(from: url)
-        guard let http = response as? HTTPURLResponse else {
-            throw YouTubePlaybackError.invalidResponse
-        }
-        guard (200 ..< 300).contains(http.statusCode) else {
-            let detail = (try? JSONDecoder().decode(YouTubeAPIErrorEnvelope.self, from: data))?.error.message
-                ?? "HTTP \(http.statusCode)"
-            throw YouTubePlaybackError.requestFailed(detail)
-        }
-
-        let payload: YouTubeSearchResponse
-        do {
-            payload = try JSONDecoder().decode(YouTubeSearchResponse.self, from: data)
-        } catch {
-            throw YouTubePlaybackError.invalidResponse
-        }
-        let candidates = payload.items.compactMap { item -> YouTubeSearchCandidate? in
-            guard let videoID = item.id.videoID, !videoID.isEmpty else { return nil }
-            return YouTubeSearchCandidate(
-                videoID: videoID,
-                title: item.snippet.title,
-                channelTitle: item.snippet.channelTitle
-            )
-        }
-        guard let winner = Self.bestCandidate(in: candidates, for: song) else {
-            throw YouTubePlaybackError.noEmbeddableVideo
-        }
+        let winner = try await musicCatalog.resolve(song: song)
         return YouTubePlaybackTarget(
             videoID: winner.videoID,
             videoTitle: winner.title,
-            channelTitle: winner.channelTitle,
+            channelTitle: winner.artists.joined(separator: ", "),
             startOffset: max(0, startOffset)
         )
     }
 
     static func bestCandidate(
-        in candidates: [YouTubeSearchCandidate],
+        in candidates: [YouTubeMusicSongCandidate],
         for song: RecognizedSong
-    ) -> YouTubeSearchCandidate? {
+    ) -> YouTubeMusicSongCandidate? {
         candidates.max { score($0, for: song) < score($1, for: song) }
     }
 
-    private static func score(_ candidate: YouTubeSearchCandidate, for song: RecognizedSong) -> Int {
+    private static func score(_ candidate: YouTubeMusicSongCandidate, for song: RecognizedSong) -> Int {
+        let expectedTitle = normalized(song.title)
+        let expectedArtist = normalized(song.artist)
         let title = normalized(candidate.title)
-        let channel = normalized(candidate.channelTitle)
-        let songTitle = normalized(song.title)
-        let artist = normalized(song.artist)
-        var score = 0
-        if title.contains(songTitle) { score += 6 }
-        if title.contains(artist) { score += 4 }
-        if channel.contains(artist) { score += 3 }
-        if title.contains("official") || title.contains("audio") || channel.contains("topic") { score += 1 }
-        return score
+        let artists = candidate.artists.map(normalized)
+        let sourceDescription = "\(expectedTitle) \(expectedArtist)"
+        var result = 0
+
+        if title == expectedTitle { result += 100 }
+        else if title.contains(expectedTitle) { result += 25 }
+        else { result -= 80 }
+
+        if artists.contains(expectedArtist) { result += 60 }
+        else if artists.contains(where: { $0.contains(expectedArtist) || expectedArtist.contains($0) }) { result += 20 }
+        else { result -= 100 }
+
+        let candidateDescription = "\(title) \(normalized(candidate.album ?? ""))"
+        for marker in variantMarkers where candidateDescription.contains(marker) && !sourceDescription.contains(marker) {
+            result -= 45
+        }
+        if candidate.durationSeconds == nil { result -= 5 }
+        return result
     }
+
+    private static let variantMarkers = [
+        "live", "concert", "cover", "karaoke", "remix", "acoustic",
+        "instrumental", "spedup", "slowed", "nightcore", "version",
+        "tribute", "piano", "guitar"
+    ]
 
     private static func normalized(_ text: String) -> String {
         text
             .folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: .current)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .unicodeScalars
+            .filter { CharacterSet.alphanumerics.contains($0) }
+            .map(String.init)
+            .joined()
     }
 }
 
-enum YouTubeAPIKeyStore {
-    private static let service = "com.example.CoffeeSync.youtube"
-    private static let account = "data-api-key"
+private final class YouTubeMusicCatalogResolver {
+    struct Environment: Sendable {
+        let python: URL
+        let script: URL
 
-    static func load() -> String {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne
-        ]
-        var item: CFTypeRef?
-        guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
-              let data = item as? Data,
-              let value = String(data: data, encoding: .utf8) else {
-            return ""
+        static func bundledRuntime() -> Environment {
+            let root = Bundle(for: YouTubePlaybackEngine.self).resourceURL?
+                .appendingPathComponent("ShazamIO", isDirectory: true)
+                ?? URL(fileURLWithPath: "/ShazamIO-runtime-missing", isDirectory: true)
+            return Environment(
+                python: root.appendingPathComponent("python/bin/python3.10", isDirectory: false),
+                script: root.appendingPathComponent("resolve_youtube_music.py", isDirectory: false)
+            )
         }
-        return value
     }
 
-    static func save(_ key: String) throws {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account
-        ]
-        SecItemDelete(query as CFDictionary)
-        guard !key.isEmpty else { return }
+    private let environment: Environment
 
-        var addQuery = query
-        addQuery[kSecValueData as String] = Data(key.utf8)
-        let status = SecItemAdd(addQuery as CFDictionary, nil)
-        guard status == errSecSuccess else {
-            throw NSError(domain: NSOSStatusErrorDomain, code: Int(status))
+    init(environment: Environment = .bundledRuntime()) {
+        self.environment = environment
+    }
+
+    func resolve(song: RecognizedSong) async throws -> YouTubeMusicSongCandidate {
+        guard FileManager.default.isExecutableFile(atPath: environment.python.path),
+              FileManager.default.fileExists(atPath: environment.script.path) else {
+            throw YouTubePlaybackError.musicCatalogUnavailable("找不到內嵌的 ytmusicapi runtime。")
         }
+
+        let output = try await run(arguments: [environment.script.path, song.title, song.artist])
+        let response: Response
+        do {
+            response = try JSONDecoder().decode(Response.self, from: output.standardOutput)
+        } catch {
+            throw YouTubePlaybackError.invalidResponse
+        }
+        guard output.exitCode == 0 else {
+            throw YouTubePlaybackError.musicCatalogUnavailable(response.error ?? output.combinedText)
+        }
+        guard let winner = YouTubePlaybackEngine.bestCandidate(in: response.candidates, for: song) else {
+            throw YouTubePlaybackError.noCanonicalSong
+        }
+        return winner
+    }
+
+    private func run(arguments: [String]) async throws -> CatalogProcessOutput {
+        try await Task.detached(priority: .userInitiated) { [environment] in
+            let process = Process()
+            let stdout = Pipe()
+            let stderr = Pipe()
+            process.executableURL = environment.python
+            // The runtime lives inside the signed app bundle. Prevent Python
+            // from writing __pycache__ files there during catalog resolution.
+            process.arguments = ["-B"] + arguments
+            process.standardOutput = stdout
+            process.standardError = stderr
+            try process.run()
+            process.waitUntilExit()
+            return CatalogProcessOutput(
+                exitCode: process.terminationStatus,
+                standardOutput: stdout.fileHandleForReading.readDataToEndOfFile(),
+                standardError: stderr.fileHandleForReading.readDataToEndOfFile()
+            )
+        }.value
+    }
+
+    private struct Response: Decodable {
+        let candidates: [YouTubeMusicSongCandidate]
+        let error: String?
     }
 }
 
-private struct YouTubeSearchResponse: Decodable {
-    let items: [Item]
+private struct CatalogProcessOutput: Sendable {
+    let exitCode: Int32
+    let standardOutput: Data
+    let standardError: Data
 
-    struct Item: Decodable {
-        let id: Identifier
-        let snippet: Snippet
-    }
-
-    struct Identifier: Decodable {
-        let videoID: String?
-
-        enum CodingKeys: String, CodingKey {
-            case videoID = "videoId"
-        }
-    }
-
-    struct Snippet: Decodable {
-        let title: String
-        let channelTitle: String
-    }
-}
-
-private struct YouTubeAPIErrorEnvelope: Decodable {
-    let error: Detail
-
-    struct Detail: Decodable {
-        let message: String
+    var combinedText: String {
+        [standardOutput, standardError]
+            .compactMap { String(data: $0, encoding: .utf8) }
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n")
     }
 }

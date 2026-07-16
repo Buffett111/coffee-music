@@ -42,7 +42,7 @@ struct ContentView: View {
                 Text("CoffeeSync")
                     .font(.title2.weight(.bold))
                     .foregroundStyle(.white)
-                Text("ShazamIO 辨識，YouTube 在耳機裡接手播放。")
+                Text("ShazamIO 辨識，YouTube Music 曲庫選歌後播放。")
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.68))
             }
@@ -58,16 +58,12 @@ struct ContentView: View {
 
     private var configurationCard: some View {
         card {
-            Label("YouTube 播放設定", systemImage: "play.rectangle.fill")
+            Label("YouTube Music 歌曲解析（實驗）", systemImage: "music.note.list")
                 .font(.headline)
                 .foregroundStyle(.white)
-            HStack(spacing: 8) {
-                SecureField("貼上自己的 YouTube Data API key", text: $model.youTubeAPIKey)
-                    .textFieldStyle(.roundedBorder)
-                Button("儲存", action: model.saveYouTubeAPIKey)
-                    .buttonStyle(.borderedProminent)
-            }
-            Text("金鑰只存於這台 Mac 的 Keychain，用於官方 YouTube Data API 搜尋。播放器會保持可見。")
+            Text("先從 YouTube Music 的 songs 曲庫選擇標準發行版本，再交給可見的 YouTube 播放器對時。")
+                .foregroundStyle(.white.opacity(0.78))
+            Text("此測試分支不需要 YouTube Data API key；ytmusicapi 是非官方曲庫解析器，服務端改版時可能需要更新。")
                 .font(.footnote)
                 .foregroundStyle(.white.opacity(0.62))
         }
@@ -148,7 +144,11 @@ struct ContentView: View {
                 Text(target.channelTitle)
                     .font(.footnote)
                     .foregroundStyle(.white.opacity(0.68))
-                YouTubePlayerView(target: target, seekCommand: model.playbackSeekCommand)
+                YouTubePlayerView(
+                    target: target,
+                    seekCommand: model.playbackSeekCommand,
+                    onPlaybackEnded: model.playerDidFinish
+                )
                     .frame(height: 250)
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
@@ -196,7 +196,7 @@ struct ContentView: View {
     }
 
     private var privacyNote: some View {
-        Label("CoffeeSync 只在同步期間錄製短片段。請先取得所在地要求的錄音同意，並自行遵守 YouTube 與第三方服務條款。", systemImage: "lock.fill")
+        Label("CoffeeSync 只在同步期間錄製短片段。請先取得所在地要求的錄音同意，並自行遵守 YouTube、ytmusicapi 與第三方服務條款。", systemImage: "lock.fill")
             .font(.footnote)
             .foregroundStyle(.white.opacity(0.60))
     }
@@ -232,11 +232,13 @@ struct ContentView: View {
 private struct YouTubePlayerView: NSViewRepresentable {
     let target: YouTubePlaybackTarget
     let seekCommand: YouTubeSeekCommand?
+    let onPlaybackEnded: () -> Void
 
     func makeNSView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
         configuration.allowsAirPlayForMediaPlayback = true
         configuration.mediaTypesRequiringUserActionForPlayback = []
+        configuration.userContentController.add(context.coordinator, name: "coffeeSync")
         let view = WKWebView(frame: .zero, configuration: configuration)
         view.setValue(false, forKey: "drawsBackground")
         view.navigationDelegate = context.coordinator
@@ -254,13 +256,16 @@ private struct YouTubePlayerView: NSViewRepresentable {
         context.coordinator.queueSeek(seekCommand.delta, in: webView)
     }
 
-    func makeCoordinator() -> Coordinator { Coordinator() }
+    static func dismantleNSView(_ webView: WKWebView, coordinator _: Coordinator) {
+        webView.configuration.userContentController.removeScriptMessageHandler(forName: "coffeeSync")
+    }
 
-    final class Coordinator: NSObject, WKNavigationDelegate {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var loadedTarget: YouTubePlaybackTarget?
         var lastSeekCommandID: UUID?
         var isLoadingTarget = false
         private var pendingSeekDelta: TimeInterval = 0
+        var onPlaybackEnded: (() -> Void)?
 
         func webView(_ webView: WKWebView, didFinish _: WKNavigation!) {
             isLoadingTarget = false
@@ -279,11 +284,22 @@ private struct YouTubePlayerView: NSViewRepresentable {
             let javaScriptDelta = String(format: "%.3f", delta)
             webView.evaluateJavaScript("window.coffeeSyncSeekRelative && window.coffeeSyncSeekRelative(\(javaScriptDelta));")
         }
+
+        func userContentController(_: WKUserContentController, didReceive message: WKScriptMessage) {
+            guard message.name == "coffeeSync", message.body as? String == "ended" else { return }
+            DispatchQueue.main.async { [weak self] in self?.onPlaybackEnded?() }
+        }
     }
 
     private var appOrigin: String {
         let identifier = Bundle.main.bundleIdentifier?.lowercased() ?? "com.example.coffeesync"
         return "https://\(identifier)"
+    }
+
+    func makeCoordinator() -> Coordinator {
+        let coordinator = Coordinator()
+        coordinator.onPlaybackEnded = onPlaybackEnded
+        return coordinator
     }
 
     private func playerHTML(for target: YouTubePlaybackTarget) -> String {
@@ -310,6 +326,10 @@ private struct YouTubePlayerView: NSViewRepresentable {
               event.target.loadVideoById({videoId: \(videoID), startSeconds: \(start)});
               event.target.playVideo();
               while (pendingSeekDeltas.length > 0) { applySeek(pendingSeekDeltas.shift()); }
+            }, onStateChange: function(event) {
+              if (event.data === YT.PlayerState.ENDED) {
+                window.webkit.messageHandlers.coffeeSync.postMessage('ended');
+              }
             }}
           });
         }

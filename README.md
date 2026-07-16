@@ -70,12 +70,24 @@ visible player before recording.
 - After an unrecognized clip or YouTube error, CoffeeSync retries after
   **18 seconds**.
 - After a recognised track, it waits **60 seconds** before checking again.
+- If the currently synced YouTube video reaches its end, CoffeeSync starts a
+  fresh recognition cycle immediately instead of waiting for that 60-second
+  interval.
 - It avoids restarting the same song when a later recognition confirms it.
 - The status card always shows whether CoffeeSync is recording, recognizing,
   switching playback, or the live countdown until its next recognition cycle.
 - **Re-sync** immediately starts a new recognition cycle and allows the
   recognised song to be aligned again without waiting for the normal cadence.
 - The packaged app does not retain microphone WAV clips or recognition logs.
+
+## Experimental YouTube Music resolver branch
+
+The `codex/ytmusicapi-song-resolver` branch keeps the same visible official
+YouTube IFrame player but resolves a recognised title and artist through
+`ytmusicapi` with the YouTube Music `songs` filter first. This is intended to
+avoid selecting concert, cover, karaoke, or remix videos that happen to share a
+title. `ytmusicapi` is an unofficial library that emulates YouTube Music web
+requests; it is not endorsed by Google and may break if the service changes.
 
 ## Build and package
 

@@ -205,7 +205,9 @@ final class ShazamIORecognitionEngine {
             let stdout = Pipe()
             let stderr = Pipe()
             process.executableURL = environment.python
-            process.arguments = arguments
+            // The runtime lives inside the signed app bundle. Prevent Python
+            // from writing __pycache__ files there during recognition.
+            process.arguments = ["-B"] + arguments
             process.standardOutput = stdout
             process.standardError = stderr
             try process.run()
