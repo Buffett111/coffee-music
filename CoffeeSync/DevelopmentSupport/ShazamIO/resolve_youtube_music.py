@@ -29,7 +29,7 @@ def main() -> int:
             ignore_spelling=True,
         )
         candidates: list[dict[str, object]] = []
-        for result in results:
+        for search_rank, result in enumerate(results):
             video_id = result.get("videoId")
             title = result.get("title")
             artists = result.get("artists") or []
@@ -45,6 +45,10 @@ def main() -> int:
                     "album": album.get("name"),
                     "durationSeconds": result.get("duration_seconds"),
                     "resultType": result.get("resultType"),
+                    # Preserve YouTube Music's own relevance ordering. The
+                    # macOS app uses this as a local tie-breaker only; it does
+                    # not make another network request before playback.
+                    "searchRank": search_rank,
                 }
             )
         print(json.dumps({"query": query, "candidates": candidates}, ensure_ascii=False))
