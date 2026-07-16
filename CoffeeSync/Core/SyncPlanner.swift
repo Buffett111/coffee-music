@@ -1,6 +1,6 @@
 import Foundation
 
-/// Converts an AudD match into the point that Music.app should play now.
+/// Converts a ShazamIO match into the point that YouTube should play now.
 ///
 /// A match offset refers to the catalog recording. By the time the app receives
 /// that result and asks the player to start, the café track has advanced by the
@@ -36,7 +36,7 @@ struct SyncPlanner: Sendable {
     }
 }
 
-/// Avoids restarting the same song whenever AudD reports the same match.
+/// Avoids restarting the same song whenever ShazamIO reports the same match.
 struct TrackSwitchGate: Sendable {
     var minimumSwitchInterval: TimeInterval = 8
     private(set) var currentIdentity: String?
