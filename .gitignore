@@ -6,3 +6,7 @@ dist/
 xcuserdata/
 *.xcuserstate
 .env
+CoffeeSync/DevelopmentSupport/ShazamIO/python/**/__pycache__/
+CoffeeSync/DevelopmentSupport/ShazamIO/python/**/*.pyc
+CoffeeSync/DevelopmentSupport/ShazamIO/python/bin/*
+!CoffeeSync/DevelopmentSupport/ShazamIO/python/bin/python3.10
